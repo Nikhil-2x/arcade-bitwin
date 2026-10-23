@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { COLORS, W } from '../config/constants.ts'
 import { buildTextures } from '../entities/textures.ts'
+import { SceneBridge } from '../sceneBridge.ts'
 import { GameState } from '../state/GameState.ts'
 import type { LevelId } from '../types.ts'
 import { display, frame, hex, text } from '../ui/widgets.ts'
@@ -11,6 +12,7 @@ const SEGMENTS = 24
 /**
  * Loader: one streetlight flickers on while a segmented meter fills and the counter ticks up.
  * Ends on an "enter" gate so the first click also unlocks browser audio for the trailer.
+ * After the gate it goes wherever the URL asked for (a deep link), else to the trailer.
  */
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -107,7 +109,7 @@ export class BootScene extends Phaser.Scene {
       gone = true
       Sfx.click()
       this.cameras.main.fadeOut(400, 7, 9, 20)
-      this.time.delayedCall(420, () => this.scene.start(toMenu ? 'Menu' : 'Trailer'))
+      this.time.delayedCall(420, () => this.scene.start(SceneBridge.takeEntry() ?? (toMenu ? 'Menu' : 'Trailer')))
     }
     this.input.once('pointerdown', go)
     this.input.keyboard?.once('keydown', go)

@@ -165,6 +165,11 @@ class GameStateImpl {
     return this.mode === 'solo'
   }
 
+  /** Level 3 has been played to the end at least once, so the ending and results have something to show. */
+  get storyFinished() {
+    return this.players[0].story.won[3] !== undefined
+  }
+
   /** Is the next step the first round of a new level? */
   get levelJustFinished(): boolean {
     const next = this.steps[this.stepIndex + 1]

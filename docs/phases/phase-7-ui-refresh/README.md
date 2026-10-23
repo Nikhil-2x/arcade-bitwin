@@ -50,7 +50,7 @@ Both load from Google Fonts in `index.html`.
     A wrong answer shakes the camera and resets the combo.
 - **Brief, Round End, Ending, Results, Prologue and Trailer** all use the new kit. Ending titles track in from wide letter
   spacing, and good endings leave the city's windows lit while bad ones go nearly dark.
-- **DOM layer** ([GameCanvas.tsx](../../../frontend/src/game/GameCanvas.tsx), [index.css](../../../frontend/src/index.css)):
+- **DOM layer** ([components/](../../../frontend/src/components), [styles/index.css](../../../frontend/src/styles/index.css)):
   - A flashlight cursor that eases after the pointer, grows over clickable things and shrinks on press. It applies to mouse
     and trackpad only.
   - A CRT scanline and vignette overlay.

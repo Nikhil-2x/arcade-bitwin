@@ -39,10 +39,42 @@ straight away, and `#dev=3&ff=4` starts Level 3 and runs the simulation 4x faste
 | Barrier (Player 2) | Arrow keys move the ghost, `1`-`8` or a click on the bottom bar uses an ability, the mouse also moves the ghost |
 | Solo mode | Runner can also use the arrow keys. The Barrier is an AI. |
 
-## Source layout (`frontend/src/game`)
+## Routes
+
+One Phaser game stays mounted in `GameLayout`; each route stands for one or more scenes. Scene changes
+the game makes push a URL, and back/forward or a typed URL switches the game to that route's scene.
+A cold load always runs Boot (textures + the click that unlocks audio), then goes to the linked page.
+
+| Path | Scenes | Notes |
+| --- | --- | --- |
+| `/` | Boot, Trailer | |
+| `/menu` | Menu | |
+| `/levels` | LevelSelect | |
+| `/play/:levelId` | Prologue, Brief, Level, RoundEnd, LevelResult | opening it starts that level; bad ids go to `/levels` |
+| `/ending`, `/results` | Ending, Results | only after Level 3 was finished, else `/menu` |
+| anything else | | redirects to `/` |
+
+A static host needs an SPA fallback (serve `index.html` for unknown paths); `vite dev`/`preview` already do.
+
+## Source layout (`frontend/src`)
+
+```
+main.tsx                           React entry
+app/App.tsx, app/router.tsx        RouterProvider + route table
+routes/paths.ts                    path constants, scene <-> path mapping
+layouts/GameLayout.tsx             persistent stage: canvas, overlays, <Outlet />, game -> URL sync
+pages/                             one per route; each tells the game which scene(s) it covers
+components/                        FlashlightCursor, CrtFeed, RotateNotice (DOM layers over the canvas)
+hooks/                             useGameScene (URL -> game), useSceneSync (game -> URL)
+styles/index.css                   global styles
+game/                              everything Phaser, below
+```
+
+### `frontend/src/game`
 
 ```
 createGame.ts, GameCanvas.tsx      Phaser config + React host
+sceneBridge.ts                     reports scene starts to the router, switches scenes on request
 config/constants.ts                screen size, colours, balance numbers (bible section 11)
 types.ts                           shared types (abilities, map data, script events)
 state/GameState.ts                 global state + per-Priya story flags (bible section 3)
@@ -61,6 +93,6 @@ systems/
   BarrierSystem.ts                 energy, cooldowns, caps, locks
   BarrierAI.ts                     solo-mode Barrier
 ui/                                Hud.ts (top bar, ability bar, toasts, intel), widgets.ts
-scenes/                            Boot, Menu, Prologue, Brief, Level, Prompt, RoundEnd, Ending, Results
+scenes/                            Boot, Trailer, Menu, LevelSelect, Prologue, Brief, Level, Prompt, RoundEnd, LevelResult, Ending, Results
 utils/                             sfx.ts (WebAudio synth), shuffle.ts
 ```

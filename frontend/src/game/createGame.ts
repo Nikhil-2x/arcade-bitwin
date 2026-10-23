@@ -12,6 +12,7 @@ import { PromptScene } from './scenes/PromptScene.ts'
 import { ResultsScene } from './scenes/ResultsScene.ts'
 import { RoundEndScene } from './scenes/RoundEndScene.ts'
 import { TrailerScene } from './scenes/TrailerScene.ts'
+import { SceneBridge } from './sceneBridge.ts'
 
 export function createGame(parent: HTMLElement) {
   const game = new Phaser.Game({
@@ -37,6 +38,7 @@ export function createGame(parent: HTMLElement) {
       ResultsScene,
     ],
   })
+  SceneBridge.attach(game)
   // handy for debugging in the browser console and in automated smoke tests
   if (import.meta.env.DEV) (window as unknown as { __game: Phaser.Game }).__game = game
   return game
