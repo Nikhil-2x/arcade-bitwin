@@ -35,8 +35,8 @@ export interface PromptConfig {
 /**
  * Generic phone-style overlay used for helpline cards, Trust Check, Spot the Scam,
  * Ride Check, Code Phrase, Prologue and Bystander choices.
- * Every card runs on the same clock (BALANCE.cardTime) and is answered from the keyboard:
- * W / S move the highlight and Space answers. The mouse and number keys belong to the Barrier.
+ * Every card runs on the same clock (BALANCE.cardTime). Answer with W / S + Space, or by
+ * clicking / tapping an option (needed on phones). Number keys stay off: they are the Barrier's.
  */
 export class PromptScene extends Phaser.Scene {
   private cfg!: PromptConfig
@@ -94,18 +94,22 @@ export class PromptScene extends Phaser.Scene {
 
     cfg.options.forEach((label, i) => {
       const b = button(this, 640, cy + 26, w - 80, 50, label, () => this.choose(i), accent, label.length > 46 ? 15 : 18, { body: true })
-      b.container.disableInteractive()
+      // pointer and keyboard share one highlight: hovering moves it, leaving keeps it on the last option
+      b.container.on('pointerover', () => this.focus(i))
+      b.container.on('pointerout', () => !this.locked && this.sel === i && b.setFocus(true))
       this.optionButtons.push(b)
       root.add(b.container)
       cy += 62
     })
     const how = need > 1 ? `SPACE  PICK ${need}` : 'SPACE  ANSWER'
-    root.add(display(this, 640, cy + 8, `W / S  CHOOSE      ${how}`, 11, hex(COLORS.muted)).setOrigin(0.5, 0))
+    root.add(display(this, 640, cy + 8, `W / S  CHOOSE      ${how}      OR CLICK / TAP`, 11, hex(COLORS.muted)).setOrigin(0.5, 0))
     this.optionButtons[0]?.setFocus(true)
 
     this.bar = this.add.graphics()
     this.barRect = { x: x + 40, y: y + 74, w: w - 80 }
     this.input.keyboard?.on('keydown', (e: KeyboardEvent) => this.onKey(e))
+    // a click or tap anywhere skips the result once it has shown (no Space key on phones)
+    this.input.on('pointerdown', () => this.locked && this.time.now > this.finishAfter && this.finish())
 
     // entrance: pop in, phone ring for incoming calls
     root.setScale(0.9).setAlpha(0)
@@ -127,13 +131,19 @@ export class PromptScene extends Phaser.Scene {
       return
     }
     if (k === 'w' || k === 's') {
-      this.optionButtons[this.sel].setFocus(false)
-      this.sel = (this.sel + (k === 'w' ? n - 1 : 1)) % n
-      this.optionButtons[this.sel].setFocus(true)
+      this.focus((this.sel + (k === 'w' ? n - 1 : 1)) % n)
       Sfx.hover()
     } else if (k === ' ') {
       this.choose(this.sel)
     }
+  }
+
+  /** Move the single highlight to option i (from W / S or from the pointer). */
+  private focus(i: number) {
+    if (this.locked || i === this.sel) return
+    this.optionButtons[this.sel].setFocus(false)
+    this.sel = i
+    this.optionButtons[i].setFocus(true)
   }
 
   update(_t: number, delta: number) {
@@ -177,6 +187,7 @@ export class PromptScene extends Phaser.Scene {
     this.result = { correct, choice, timedOut }
     this.optionButtons.forEach((b, k) => {
       b.setEnabled(false)
+      b.container.disableInteractive()
       if (cfg.correct?.includes(k)) b.container.setAlpha(1)
     })
 

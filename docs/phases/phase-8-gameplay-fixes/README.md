@@ -20,8 +20,8 @@
 Items 1 and 2 were then extended from helpline cards to **every card**:
 
 - **All cards have 10 seconds** to answer. This covers helpline cards (Level 3 was 8 s), Spot the Scam (was 4 s), the code-phrase call (was 6 s), and the Trust Check, Ride Check, Meera's check-in, the code-phrase pick and the Bystander round, which had no timer before. The time lives in one place: `BALANCE.cardTime` in [constants.ts](../../../frontend/src/game/config/constants.ts). The per-level `cardTimer` field was removed.
-- **All cards are answered with W / S + Space.** The mouse and number keys do nothing on any card.
-- **Ride Check (pick 2):** Space ticks the highlighted option (✓) and Space again unticks it. The card answers as soon as two are ticked, so there is no Confirm button.
+- **All cards are answered with W / S + Space, or by clicking / tapping an option.** The pointer is kept so cards work on phones. Hovering an option moves the same highlight W / S uses, so only one option is ever highlighted. A click or tap anywhere skips the result once it has shown. Number keys stay off on cards, because they are the Barrier's ability keys.
+- **Ride Check (pick 2):** Space or a click / tap ticks an option (✓), and doing it again unticks it. The card answers as soon as two are ticked, so there is no Confirm button.
 - **If a card runs out of time:**
   - Quiz cards count as wrong, as before. For the Trust Check and Ride Check, which had no timer before, this means a timeout now applies their wrong-answer penalty.
   - Story choices fall back safely: no check-in with Meera, the first code phrase, or "ignore" for the Bystander.
