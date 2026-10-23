@@ -16,7 +16,6 @@ export const level2: LevelDef = {
     text: 'You are rumor, confusion and the crowd that does not notice. You never touch her. You just make everything unclear: a sign pointing the wrong way, a message from "a friend", a crowd that moves away at the wrong time. If she trusts the wrong thing, you win.',
   },
   abilities: ['decoy', 'crowd', 'fakeMsg', 'drain', 'flicker'],
-  cardTimer: 5,
   hints: false,
   energyStart: 70,
   isolationScale: 1.5,
@@ -28,8 +27,8 @@ export const level2: LevelDef = {
   ],
   afterRound:
     'Never share an OTP. Verify cab and driver details. Public, lit, staffed places are the safest places to ask for help. Report cyber harassment on 1930 or cybercrime.gov.in.',
-  startAllies: (story, lostPrev) =>
-    lostPrev && story.checkedIn ? [{ id: 'meera', color: 'cyan', label: 'Meera' }] : [],
+  // nobody walks with her from the start: company has to be earned during the level
+  startAllies: () => [],
   map: () => {
     const g = new Grid()
     g.rect('m', 1, 14, 30, 2).rect('m', 1, 10, 30, 3).rect('m', 1, 6, 30, 3).rect('m', 1, 3, 30, 2)

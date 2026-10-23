@@ -2,7 +2,7 @@ import Phaser from 'phaser'
 import { COLORS } from '../config/constants.ts'
 import { LEVELS } from '../data/levels/index.ts'
 import { GameState } from '../state/GameState.ts'
-import { banner, button, panel, starfield, text } from '../ui/widgets.ts'
+import { backdrop, banner, button, display, frame, hex, panel, text } from '../ui/widgets.ts'
 import type { PromptResult } from './PromptScene.ts'
 
 const REASONS = {
@@ -24,16 +24,17 @@ export class RoundEndScene extends Phaser.Scene {
     this.bystanderDone = false
     const o = GameState.lastOutcome!
     const def = LEVELS[o.step.level]
-    this.cameras.main.setBackgroundColor('#070a1f')
-    this.cameras.main.fadeIn(300, 0, 0, 0)
-    starfield(this)
+    this.cameras.main.fadeIn(300, 7, 9, 20)
+    backdrop(this)
+    this.add.rectangle(0, 0, 1280, 720, COLORS.bg, 0.55).setOrigin(0)
+    frame(this, `NIGHT 0${def.id} / 03`, 'ROUND REPORT')
     banner(this, 100, o.win ? 'RUNNER WINS' : 'BARRIER WINS', o.win ? COLORS.green : COLORS.red)
-    text(this, 640, 188, REASONS[o.reason], 20, '#ffffff').setOrigin(0.5)
+    text(this, 640, 188, REASONS[o.reason], 20, hex(COLORS.paper)).setOrigin(0.5)
 
     const stat = (x: number, title: string, color: number, lines: string[]) => {
-      panel(this, x, 225, 400, 190, 0x0c1030, color)
-      text(this, x + 24, 238, title, 18, '#' + color.toString(16).padStart(6, '0'))
-      text(this, x + 24, 270, lines.join('\n'), 17, '#ffffff', { lineSpacing: 6 })
+      panel(this, x, 225, 400, 190, COLORS.panel, color)
+      display(this, x + 24, 240, title, 14, hex(color))
+      text(this, x + 24, 272, lines.join('\n'), 17, hex(COLORS.paper), { lineSpacing: 6 })
     }
     const ai = GameState.aiBarrier
     stat(110, `P${o.step.runner + 1}  PRIYA  +${o.runnerScore}`, COLORS.cyan, [
@@ -51,12 +52,12 @@ export class RoundEndScene extends Phaser.Scene {
     ])
 
     const notes = this.carryNotes()
-    panel(this, 110, 430, 1060, 170, 0x0c1030, COLORS.yellow)
-    text(this, 134, 442, 'WHAT TO REMEMBER', 16, '#f5e663')
-    text(this, 134, 468, def.afterRound, 17, '#ffffff', { wordWrap: { width: 1010 }, lineSpacing: 4 })
-    if (notes) text(this, 134, 548, notes, 15, '#9eecff', { wordWrap: { width: 1010 } })
+    panel(this, 110, 430, 1060, 170, COLORS.panel, COLORS.amber)
+    display(this, 134, 444, 'WHAT TO REMEMBER', 13, hex(COLORS.amber))
+    text(this, 134, 470, def.afterRound, 17, hex(COLORS.paper), { wordWrap: { width: 1010 }, lineSpacing: 4 })
+    if (notes) text(this, 134, 548, notes, 15, hex(COLORS.cyan), { wordWrap: { width: 1010 } })
 
-    const b = button(this, 640, 650, 320, 56, 'Continue', () => this.next(), COLORS.green, 24)
+    const b = button(this, 640, 650, 320, 56, 'CONTINUE', () => this.next(), COLORS.amber, 20)
     this.input.keyboard?.once('keydown-SPACE', () => b.container.emit('pointerdown'))
   }
 
@@ -69,12 +70,10 @@ export class RoundEndScene extends Phaser.Scene {
     if (o.step.level === 1) {
       if (s.reportedLight) bits.push('Level 3 will have a community-lit lane.')
       if (s.tookShortcut >= 2) bits.push('Shortcuts drained time and battery: Level 2 starts lower.')
-      if (!o.win) bits.push(s.checkedIn ? 'Meera worries and arrives to help in Level 2.' : 'Nobody was told: no backup in Level 2.')
     } else {
-      if (s.helpedKavya) bits.push('Kavya will be waiting in Level 3 with a bonus path.')
+      if (s.helpedKavya) bits.push('Kavya opens a bonus path in Level 3.')
       if (s.fellForScam) bits.push('The fake message will come back in Level 3.')
       if (o.battery < 30) bits.push('Battery is under 30%: Level 3 starts with a nearly dead phone.')
-      if (s.networkScore >= 3) bits.push('A strong network: more allies at the start of Level 3.')
     }
     return bits.length ? 'Next: ' + bits.join('  ') : ''
   }
@@ -104,6 +103,7 @@ export class RoundEndScene extends Phaser.Scene {
         const rec = GameState.players[who]
         rec.bystander = BYSTANDER_KEYS[r.choice[0]] ?? 'ignore'
         rec.barrierScore += r.correct ? 60 : 0
+        GameState.tally[3]!.bystander[who] += r.correct ? 60 : 0
         GameState.surpriseAlly = r.correct
         this.advance()
       },
@@ -113,6 +113,7 @@ export class RoundEndScene extends Phaser.Scene {
   private advance() {
     GameState.stepIndex++
     this.cameras.main.fadeOut(300, 0, 0, 0)
-    this.time.delayedCall(320, () => this.scene.start(GameState.done ? 'Ending' : 'Brief'))
+    // once every round of the chosen level is played, show who won the level
+    this.time.delayedCall(320, () => this.scene.start(GameState.done ? 'LevelResult' : 'Brief'))
   }
 }

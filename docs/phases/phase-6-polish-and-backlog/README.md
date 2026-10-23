@@ -6,7 +6,7 @@
 
 - **Among-Us-inspired feel**: bean crewmates with walk cycle, vent-pop ally spawns with particles, a floating ghost for the Barrier,
   a route-progress bar like the task bar, a red emergency pulse and heartbeat when isolation is high, crew-reveal role screens,
-  slide-in Victory/Defeat banners, starfield menus with tumbling crewmates.
+  slide-in Victory/Defeat banners, tumbling crewmates on the menu (menus restyled in [phase 7](../phase-7-ui-refresh/README.md)).
 - **Feedback**: synth sounds for calls, correct/wrong, abilities, pops, win/lose, camera shake on a wrong call, flash on round end.
 - **Content guardrails from the bible** are built in: threats stay abstract (no harassment shown), the Runner is never blamed
   (lessons are about lights, people and places), Trust Check says it is about settings, every loss screen ends with a lesson card.

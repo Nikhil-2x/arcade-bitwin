@@ -3,7 +3,9 @@ import { H, W } from './config/constants.ts'
 import { BootScene } from './scenes/BootScene.ts'
 import { BriefScene } from './scenes/BriefScene.ts'
 import { EndingScene } from './scenes/EndingScene.ts'
+import { LevelResultScene } from './scenes/LevelResultScene.ts'
 import { LevelScene } from './scenes/LevelScene.ts'
+import { LevelSelectScene } from './scenes/LevelSelectScene.ts'
 import { MenuScene } from './scenes/MenuScene.ts'
 import { PrologueScene } from './scenes/PrologueScene.ts'
 import { PromptScene } from './scenes/PromptScene.ts'
@@ -24,11 +26,13 @@ export function createGame(parent: HTMLElement) {
       BootScene,
       TrailerScene,
       MenuScene,
+      LevelSelectScene,
       PrologueScene,
       BriefScene,
       LevelScene,
       PromptScene,
       RoundEndScene,
+      LevelResultScene,
       EndingScene,
       ResultsScene,
     ],

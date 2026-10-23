@@ -1,4 +1,90 @@
 @import "tailwindcss";
 
-html, body, #root { height: 100%; margin: 0; background: #05060f; overflow: hidden; }
-body { font-family: "Varela Round", system-ui, sans-serif; }
+:root {
+  --ink: #070914;
+  --sodium: #ffb547;
+  --ally: #9eecff;
+  --paper: #eef1ff;
+}
+
+html, body, #root { height: 100%; margin: 0; background: var(--ink); overflow: hidden; }
+body { font-family: "Varela Round", system-ui, sans-serif; color: var(--paper); }
+
+/* Letterbox: a faint vignette so the canvas edges sit in the night instead of a flat void. */
+.stage {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  background: radial-gradient(ellipse at 50% 40%, #0e1330 0%, var(--ink) 70%);
+}
+
+/* CRT feed over everything: scanlines + vignette. Pointer-transparent. */
+.feed {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+  mix-blend-mode: normal;
+}
+
+/* Flashlight cursor (fine pointers only). Phaser sets cursor:pointer inline on hover; we hide it. */
+@media (pointer: fine) {
+  .stage canvas { cursor: none !important; }
+}
+.cursor {
+  pointer-events: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border-radius: 50%;
+  border: 2px solid var(--sodium);
+  box-shadow: 0 0 18px 2px rgba(255, 181, 71, 0.45), inset 0 0 10px rgba(255, 181, 71, 0.25);
+  transition: width 180ms cubic-bezier(.2, .8, .2, 1), height 180ms cubic-bezier(.2, .8, .2, 1),
+    margin 180ms cubic-bezier(.2, .8, .2, 1), background-color 180ms, opacity 200ms;
+  opacity: 0;
+}
+.cursor::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: var(--sodium);
+}
+.cursor.is-visible { opacity: 1; }
+.cursor.is-hover { width: 58px; height: 58px; margin: -29px 0 0 -29px; background-color: rgba(255, 181, 71, 0.12); }
+.cursor.is-down { width: 26px; height: 26px; margin: -13px 0 0 -13px; }
+@media (pointer: coarse) { .cursor { display: none; } }
+
+/* Portrait phones: the game is landscape-only. */
+.rotate {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--ink);
+  font-family: "Bungee", system-ui, sans-serif;
+  color: var(--sodium);
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+.rotate small { font-family: "Varela Round", system-ui, sans-serif; color: var(--paper); letter-spacing: 0; opacity: 0.7; }
+@media (orientation: portrait) and (pointer: coarse) { .rotate { display: flex; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor { transition: none; }
+}

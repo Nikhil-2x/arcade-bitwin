@@ -1,5 +1,4 @@
 import type { LevelDef } from './types.ts'
-import type { StartAlly } from '../../types.ts'
 import { Grid } from './Grid.ts'
 
 /**
@@ -20,7 +19,6 @@ export const level3: LevelDef = {
     text: 'You are the silence of everyone who looked away. You do not need darkness alone. You need people to say "it is not my problem". Cut her off from her allies. Close the underpass. Make her feel there is no one left. But remember: you only win if nobody steps in.',
   },
   abilities: ['lightsOut', 'closeWay', 'decoy', 'crowd', 'fakeMsg', 'drain', 'flicker', 'isolate'],
-  cardTimer: 4,
   hints: false,
   energyStart: 80,
   isolationScale: 1.7,
@@ -32,13 +30,8 @@ export const level3: LevelDef = {
   ],
   afterRound:
     'Allies, lit places and the right number change the ending. Safety should not depend on luck or on one person: it is built by lights, people and places that do not look away.',
-  startAllies: (story) => {
-    const a: StartAlly[] = []
-    if (story.checkedIn) a.push({ id: 'meera', color: 'cyan', label: 'Meera' })
-    if (story.helpedKavya) a.push({ id: 'kavya', color: 'yellow', label: 'Kavya' })
-    if (story.networkScore >= 3 && a.length < 2) a.push({ id: 'neighbor', color: 'orange', label: 'Neighbor' })
-    return a
-  },
+  // nobody walks with her from the start: company has to be earned during the level
+  startAllies: () => [],
   map: (story) => {
     const g = new Grid()
     g.rect('.', 1, 14, 30, 2).rect('.', 1, 11, 30, 2).rect('.', 1, 8, 30, 2).rect('.', 1, 5, 30, 2)

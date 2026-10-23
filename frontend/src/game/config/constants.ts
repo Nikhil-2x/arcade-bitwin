@@ -8,11 +8,17 @@ export const HUD_H = 80
 export const BAR_Y = 680
 
 export const FONT = '"Varela Round", system-ui, sans-serif'
+/** Urban signage face for titles, numbers and labels. */
+export const DISPLAY = '"Bungee", "Varela Round", system-ui, sans-serif'
 
 export const COLORS = {
-  bg: 0x05060f,
-  panel: 0x10142e,
-  panelEdge: 0x2b3470,
+  bg: 0x070914,
+  panel: 0x0f1430,
+  panelEdge: 0x2a3266,
+  /** Sodium streetlight: the UI's "safe / go" signal. */
+  amber: 0xffb547,
+  muted: 0x8a93c4,
+  paper: 0xeef1ff,
   cyan: 0x9eecff,
   red: 0xff4a4a,
   green: 0x3ddc84,
@@ -44,5 +50,6 @@ export const BALANCE = {
   reportTime: 2,
   maxWrongCalls: 3,
   callAllyCost: 30, // awareness points
+  cardTime: 10, // seconds to answer any card (helpline, scam, trust, ride, code phrase, story choices)
   maxAllies: 3,
 } as const

@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
-import { FONT, H, W } from '../config/constants.ts'
+import { COLORS, FONT, H, W } from '../config/constants.ts'
+import { button, soundToggle } from '../ui/widgets.ts'
 import { Sfx } from '../utils/sfx.ts'
 import { TrailerAudio } from '../utils/TrailerAudio.ts'
 
@@ -11,9 +12,6 @@ export class TrailerScene extends Phaser.Scene {
   private timelineTimer?: Phaser.Time.TimerEvent
   private trailerContainer!: Phaser.GameObjects.Container
   private hudContainer!: Phaser.GameObjects.Container
-  private skipButton!: Phaser.GameObjects.Container
-  private soundLabel!: Phaser.GameObjects.Text
-  private isMuted = false
   private isFinishing = false
   public currentShot = 0
 
@@ -22,70 +20,32 @@ export class TrailerScene extends Phaser.Scene {
   }
 
   create() {
+    this.isFinishing = false
     this.cameras.main.fadeIn(800, 0, 0, 0)
     this.cameras.main.setBackgroundColor('#05060f')
 
     // Root cinematic container
     this.trailerContainer = this.add.container(0, 0)
-    this.hudContainer = this.add.container(0, 0).setDepth(100)
+    // pinned to the screen so it ignores the shot 1 camera pan
+    this.hudContainer = this.add.container(0, 0).setDepth(100).setScrollFactor(0)
 
     // Build cinematic HUD (Skip Trailer & Sound Toggle)
     this.createHud()
 
     // Start cinematic soundscape
-    TrailerAudio.start()
+    if (!Sfx.muted) TrailerAudio.start()
 
-    // Keyboard controls: ESC to skip, M to toggle sound
+    // ESC skips; M (sound) is bound by the toggle itself
     this.input.keyboard?.on('keydown-ESC', () => this.finishTrailer())
-    this.input.keyboard?.on('keydown-M', () => this.toggleSound())
 
     // Sequence the 7 cinematic shots
     this.playShot1()
   }
 
   private createHud() {
-    // Discreet Skip Trailer button in top-right
-    const skipBg = this.add.rectangle(0, 0, 130, 36, 0x111827, 0.7)
-      .setStrokeStyle(1, 0x38bdf8, 0.4)
-    const skipTxt = this.add.text(0, 0, 'SKIP TRAILER', {
-      fontFamily: FONT,
-      fontSize: '13px',
-      color: '#9eecff',
-    }).setOrigin(0.5)
-
-    this.skipButton = this.add.container(W - 85, 32, [skipBg, skipTxt])
-      .setSize(130, 36)
-      .setInteractive({ useHandCursor: true })
-      .on('pointerover', () => {
-        skipBg.setFillStyle(0x1e293b, 0.9)
-        skipBg.setStrokeStyle(1.5, 0x00e5ff, 0.8)
-      })
-      .on('pointerout', () => {
-        skipBg.setFillStyle(0x111827, 0.7)
-        skipBg.setStrokeStyle(1, 0x38bdf8, 0.4)
-      })
-      .on('pointerdown', () => this.finishTrailer())
-
-    // Sound toggle in top-left
-    this.soundLabel = this.add.text(28, 24, 'SOUND: ON  (M)', {
-      fontFamily: FONT,
-      fontSize: '12px',
-      color: '#94a3b8',
-    }).setInteractive({ useHandCursor: true }).on('pointerdown', () => this.toggleSound())
-
-    this.hudContainer.add([this.skipButton, this.soundLabel])
-  }
-
-  private toggleSound() {
-    this.isMuted = !this.isMuted
-    Sfx.toggleMute()
-    if (this.isMuted) {
-      TrailerAudio.stop()
-      this.soundLabel.setText('SOUND: OFF  (M)').setColor('#64748b')
-    } else {
-      TrailerAudio.start()
-      this.soundLabel.setText('SOUND: ON  (M)').setColor('#38bdf8')
-    }
+    const skip = button(this, W - 112, 44, 168, 40, 'SKIP', () => this.finishTrailer(), COLORS.amber, 14, { key: 'ESC' })
+    const sound = soundToggle(this, W - 40, H - 34, (muted) => (muted ? TrailerAudio.stop() : TrailerAudio.start()))
+    this.hudContainer.add([skip.container, sound])
   }
 
   /** SHOT 1: A City That Never Sleeps (0s - 6.5s) */

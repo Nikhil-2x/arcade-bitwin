@@ -3,7 +3,7 @@ import { COLORS } from '../config/constants.ts'
 import { Crewmate } from '../entities/Crewmate.ts'
 import { GameState } from '../state/GameState.ts'
 import type { PlayerRecord } from '../state/GameState.ts'
-import { button, starfield, text } from '../ui/widgets.ts'
+import { backdrop, button, display, frame, hex, text } from '../ui/widgets.ts'
 import { Sfx } from '../utils/sfx.ts'
 
 type EndingKey = 'circle' | 'alone' | 'help' | 'silence'
@@ -43,29 +43,34 @@ export class EndingScene extends Phaser.Scene {
     this.time.removeAllEvents()
     this.tweens.killAll()
     this.children.removeAll(true)
-    this.cameras.main.setBackgroundColor('#04050d')
-    this.cameras.main.fadeIn(500, 0, 0, 0)
-    starfield(this)
+    this.cameras.main.fadeIn(500, 7, 9, 20)
+    backdrop(this)
     const who = this.runners()[this.idx]
     const key = endingFor(GameState.players[who])
     const e = ENDINGS[key]
+    // good endings leave the windows lit; bad ones go nearly dark
+    this.add.rectangle(0, 0, 1280, 720, COLORS.bg, e.good ? 0.35 : 0.75).setOrigin(0)
+    frame(this, 'ENDING', GameState.mode === 'duo' ? `PLAYER ${who + 1}` : '')
     Sfx[e.good ? 'win' : 'lose']()
 
-    if (GameState.mode === 'duo') text(this, 640, 50, `PLAYER ${who + 1}'s PRIYA`, 22, '#9aa4d6').setOrigin(0.5)
+    if (GameState.mode === 'duo') display(this, 640, 56, `PLAYER ${who + 1}'S PRIYA`, 16, hex(COLORS.muted)).setOrigin(0.5)
     const priya = new Crewmate(this, 640, 330, 'pink', 3)
     this.time.addEvent({ delay: 16, loop: true, callback: () => priya.animate(0.016, e.good, 1) })
     if (key === 'circle') this.circleOfAllies()
 
-    const title = text(this, 640, 470, e.title, 54, '#' + e.color.toString(16).padStart(6, '0'), { strokeThickness: 10 }).setOrigin(0.5).setAlpha(0)
-    const line = text(this, 640, 535, e.line, 22, '#ffffff', { wordWrap: { width: 900 }, align: 'center' }).setOrigin(0.5).setAlpha(0)
+    const title = display(this, 640, 470, e.title, 54, hex(e.color)).setOrigin(0.5).setAlpha(0).setLetterSpacing(14)
+    const line = text(this, 640, 535, e.line, 22, hex(COLORS.paper), { wordWrap: { width: 900 }, align: 'center' }).setOrigin(0.5).setAlpha(0)
+    // the title tracks in from wide letter-spacing as it fades up
+    const track = { s: 14 }
+    this.tweens.add({ targets: track, s: 2, duration: 1400, delay: 600, ease: 'Expo.easeOut', onUpdate: () => title.setLetterSpacing(track.s) })
     this.tweens.add({ targets: [title, line], alpha: 1, duration: 900, delay: 600 })
 
     const last = this.idx >= this.runners().length - 1
     if (key === 'silence') {
-      text(this, 640, 590, 'Replay as an ally?', 22, '#f5e663').setOrigin(0.5)
-      button(this, 460, 650, 260, 52, 'Replay as an ally', () => this.scene.start('Menu'), COLORS.yellow, 20)
+      text(this, 640, 590, 'Replay as an ally?', 22, hex(COLORS.amber)).setOrigin(0.5)
+      button(this, 460, 650, 280, 52, 'REPLAY AS AN ALLY', () => this.scene.start('Menu'), COLORS.amber, 16)
     }
-    button(this, key === 'silence' ? 820 : 640, 650, 260, 52, last ? 'Final reflection' : 'Next Priya', () => this.next(), COLORS.cyan, 20)
+    button(this, key === 'silence' ? 820 : 640, 650, 280, 52, last ? 'FINAL REFLECTION' : 'NEXT PRIYA', () => this.next(), COLORS.cyan, 16)
   }
 
   /** Allies standing in a circle around Priya for the best ending. */
@@ -89,16 +94,19 @@ export class EndingScene extends Phaser.Scene {
     this.time.removeAllEvents()
     this.tweens.killAll()
     this.children.removeAll(true)
-    starfield(this)
-    text(
-      this,
-      640,
-      300,
-      'As the Barrier, you made her path harder with small gaps.\nAs Priya, you felt what allies, lights and the right number can change.\n\nIn real life, you can be the ally.',
-      28,
-      '#ffffff',
-      { align: 'center', lineSpacing: 12, wordWrap: { width: 1000 } },
-    ).setOrigin(0.5)
-    button(this, 640, 560, 300, 58, 'See results', () => this.scene.start('Results'), COLORS.green, 22)
+    backdrop(this)
+    this.add.rectangle(0, 0, 1280, 720, COLORS.bg, 0.5).setOrigin(0)
+    frame(this, 'REFLECTION')
+    const lines = [
+      'As the Barrier, you made her path harder with small gaps.',
+      'As Priya, you felt what allies, lights and the right number can change.',
+    ]
+    lines.forEach((l, i) => {
+      const t = text(this, 640, 230 + i * 50, l, 24, hex(COLORS.paper)).setOrigin(0.5).setAlpha(0)
+      this.tweens.add({ targets: t, alpha: 1, duration: 700, delay: 300 + i * 1100 })
+    })
+    const ally = display(this, 640, 390, 'IN REAL LIFE, YOU CAN BE THE ALLY.', 30, hex(COLORS.amber)).setOrigin(0.5).setAlpha(0)
+    this.tweens.add({ targets: ally, alpha: 1, duration: 900, delay: 2600 })
+    button(this, 640, 560, 300, 58, 'SEE RESULTS', () => this.scene.start('Results'), COLORS.amber, 18)
   }
 }

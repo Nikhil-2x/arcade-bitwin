@@ -88,6 +88,16 @@ const freshPlayer = (): PlayerRecord => ({
   l3Allies: 0,
 })
 
+/** Points each player earned in one level, split by side. Index = player. */
+export interface LevelTally {
+  runner: [number, number]
+  barrier: [number, number]
+  bystander: [number, number]
+}
+
+/** Each player's colour, used wherever the UI says who is playing what. */
+export const PLAYER_COLORS: [number, number] = [0x9eecff, 0xf5e663]
+
 /** Global game state shared by every scene (story bible, section 12). */
 class GameStateImpl {
   mode: GameMode = 'solo'
@@ -97,18 +107,41 @@ class GameStateImpl {
   lastOutcome: RoundOutcome | null = null
   /** Bystander decision from the previous Level 3 round, becomes a surprise ally. */
   surpriseAlly = false
+  /** The Prologue (Meera's check-in) plays once per session, before the first level. */
+  prologueDone = false
+  tally: Partial<Record<LevelId, LevelTally>> = {}
 
+  /** New session for a player count. Story flags then carry across the levels played in it. */
   newGame(mode: GameMode) {
     this.mode = mode
     this.players = [freshPlayer(), freshPlayer()]
     this.stepIndex = 0
     this.lastOutcome = null
     this.surpriseAlly = false
+    this.prologueDone = false
+    this.tally = {}
     this.steps = []
-    for (const level of [1, 2, 3] as LevelId[]) {
-      this.steps.push({ level, runner: 0, barrier: 1, round: 0 })
-      if (mode === 'duo') this.steps.push({ level, runner: 1, barrier: 0, round: 1 })
-    }
+  }
+
+  /** Queue one level: a single round solo, or two rounds with roles swapped in 2-player. */
+  startLevel(level: LevelId) {
+    this.stepIndex = 0
+    this.lastOutcome = null
+    this.surpriseAlly = false
+    this.tally[level] = { runner: [0, 0], barrier: [0, 0], bystander: [0, 0] }
+    // the ending is judged on this play of Level 3 only, so a replay starts its counters clean
+    if (level === 3) for (const p of this.players) p.l3Correct = p.l3Wrong = p.l3Allies = 0
+    this.steps = [{ level, runner: 0, barrier: 1, round: 0 }]
+    if (this.mode === 'duo') this.steps.push({ level, runner: 1, barrier: 0, round: 1 })
+  }
+
+  /** "Player 1" / "Player 2", or "AI" for the solo Barrier. */
+  playerName(idx: PlayerIdx) {
+    return this.aiBarrier && idx === 1 ? 'AI' : `Player ${idx + 1}`
+  }
+
+  playerColor(idx: PlayerIdx) {
+    return this.aiBarrier && idx === 1 ? 0xb99cff : PLAYER_COLORS[idx]
   }
 
   get step(): Step {

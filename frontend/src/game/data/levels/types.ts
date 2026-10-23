@@ -11,7 +11,6 @@ export interface LevelDef {
   theme: Theme
   persona: { name: string; text: string }
   abilities: AbilityId[]
-  cardTimer: number
   hints: boolean
   energyStart: number
   /** Multiplier on the isolation fill rate. */

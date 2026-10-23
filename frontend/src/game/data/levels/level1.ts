@@ -16,7 +16,6 @@ export const level1: LevelDef = {
     text: 'You are not a villain. You are every light nobody repaired and every gate nobody locked properly. You do not chase her. You just do not help. Switch off the lights. Close the lane. Watch what happens when a place is left alone.',
   },
   abilities: ['lightsOut', 'closeWay', 'drain'],
-  cardTimer: 5,
   hints: true,
   energyStart: 60,
   isolationScale: 1.7,

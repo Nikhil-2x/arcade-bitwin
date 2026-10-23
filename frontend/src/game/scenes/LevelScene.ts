@@ -204,9 +204,12 @@ export class LevelScene extends Phaser.Scene {
 
     const barrierIsAI = GameState.aiBarrier
     this.barrier = new BarrierSystem(this.def.abilities, this.def.energyStart + (this.story.fellForScam && this.step.level === 3 ? 20 : 0))
+    const { runner, barrier } = this.step
     this.hud = new Hud(this, {
-      runnerLabel: `P${this.step.runner + 1}  PRIYA  (Runner)`,
-      barrierLabel: `P${this.step.barrier + 1}  ${this.def.persona.name.toUpperCase()}`,
+      runnerLabel: 'PRIYA  (Runner)',
+      barrierLabel: this.def.persona.name.toUpperCase(),
+      runnerTag: { text: barrierIsAI ? 'P1' : `P${runner + 1}`, color: GameState.playerColor(runner) },
+      barrierTag: { text: barrierIsAI ? 'AI' : `P${barrier + 1}`, color: GameState.playerColor(barrier) },
       abilities: this.def.abilities,
       aiBarrier: barrierIsAI,
       onAbility: (id) => !barrierIsAI && this.useAbility(id, true),
@@ -221,7 +224,12 @@ export class LevelScene extends Phaser.Scene {
     this.setupInput()
     this.startAllies()
     this.cameras.main.fadeIn(350, 0, 0, 0)
-    this.hud.toast(`Level ${this.def.id}: ${this.def.title}`, COLORS.cyan)
+    this.hud.toast(
+      barrierIsAI
+        ? `Level ${this.def.id}: ${this.def.title}`
+        : `Level ${this.def.id}: Player ${runner + 1} is Priya, Player ${barrier + 1} is the Barrier`,
+      GameState.playerColor(runner),
+    )
     this.hud.intel(`${this.def.persona.name} wakes. Energy ${this.barrier.energy.toFixed(0)}`, 0)
   }
 
@@ -358,10 +366,6 @@ export class LevelScene extends Phaser.Scene {
     const starters = this.def.startAllies(this.story, this.story.lostLast)
     starters.forEach((a, i) => this.spawnHelper(a.id, a.color, a.label, Infinity, 36 + i * 24, false))
     if (starters.length) this.hud.toast(`${starters.map((s) => s.label).join(' & ')} found you`, COLORS.green)
-    // carry-over: a strong network from earlier levels brings one more friend
-    if (this.def.id === 3 && this.story.networkScore >= 2 && starters.length < 2 && this.story.won[1] && this.story.reportedLight) {
-      this.spawnHelper('neighbor', 'orange', 'Neighbor', Infinity, 70, false)
-    }
   }
 
   // ───────────────────────────── allies ─────────────────────────────
@@ -716,10 +720,8 @@ export class LevelScene extends Phaser.Scene {
     r.shares--
     r.battery = Math.max(0, r.battery - BALANCE.shareLocationCost)
     r.isolateUntil = 0
-    this.hud.toast('Location shared: your circle is on the way', COLORS.cyan)
+    this.hud.toast('Location shared: your circle knows where you are', COLORS.cyan)
     this.hud.intel('Priya shared her location', this.now * 1000)
-    if (this.followers().length + this.allies.filter((a) => a.mode === 'walk').length < BALANCE.maxAllies)
-      this.sendWalker('patrol', 'blue', 'Patrol', BALANCE.helperAllyTime, this.farTile(6, 16))
     Sfx.phone()
   }
 
@@ -852,8 +854,8 @@ export class LevelScene extends Phaser.Scene {
       }
     }
 
-    // Check-In Contact starts walking when she is running late
-    if (this.story.checkedIn && !r.meeraSent && this.elapsed > this.def.time * 0.55 && !this.allies.some((a) => a.id === 'meera')) {
+    // Check-In Contact starts walking only in the last 10 seconds, when she is really late
+    if (this.story.checkedIn && !r.meeraSent && this.elapsed > this.def.time - 10 && !this.allies.some((a) => a.id === 'meera')) {
       r.meeraSent = true
       this.sendWalker('meera', 'cyan', 'Meera', Infinity, World.center(this.goalRect[0] + 1, this.goalRect[1]))
       this.hud.toast('You are late: Meera starts walking towards you', COLORS.cyan)
@@ -930,12 +932,12 @@ export class LevelScene extends Phaser.Scene {
     this.ask(
       {
         title: 'Incoming: Helpline Card',
-        from: `${this.def.cardTimer}s to decide`,
+        from: `${BALANCE.cardTime}s to decide`,
         body: card.text,
         options,
         correct,
         best,
-        timer: this.def.cardTimer,
+        incoming: true,
         hint: this.def.hints ? card.hint : undefined,
         reason: card.reason,
         accent: COLORS.cyan,
@@ -1005,7 +1007,7 @@ export class LevelScene extends Phaser.Scene {
         body: s.text,
         options,
         correct: [1, 2],
-        timer: 4,
+        incoming: true,
         reason: s.why,
         accent: COLORS.green,
       },
@@ -1035,7 +1037,7 @@ export class LevelScene extends Phaser.Scene {
         body: `"Priya, it is me. Quick, I am close. Our code phrase is... ${said}."\n\nYour code phrase with Meera was: ${phrase}.`,
         options: ['It matches: this is Meera', 'It does not match: hang up'],
         correct: [fake ? 1 : 0],
-        timer: 6,
+        incoming: true,
         reason: fake ? 'A wrong phrase means a fake call. Hang up and stay with people.' : 'The phrase matched: it really was Meera.',
         accent: COLORS.cyan,
       },
@@ -1299,6 +1301,9 @@ export class LevelScene extends Phaser.Scene {
     this.rec.runnerScore += runnerScore
     const br = GameState.barrier()
     br.barrierScore += barrierScore
+    const tally = GameState.tally[this.def.id]!
+    tally.runner[this.step.runner] += runnerScore
+    tally.barrier[this.step.barrier] += barrierScore
     br.exploits.lights += ex.lights
     br.exploits.gates += ex.gates
     br.exploits.decoys += ex.decoys

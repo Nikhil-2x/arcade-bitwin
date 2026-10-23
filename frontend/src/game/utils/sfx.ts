@@ -34,7 +34,13 @@ export const Sfx = {
     muted = !muted
     return muted
   },
+  get muted() {
+    return muted
+  },
   click: () => tone(520, 0.07, 'square', 0.04),
+  hover: () => tone(1400, 0.03, 'sine', 0.015),
+  /** Rising arpeggio for timing feedback; pitch climbs with the combo. */
+  stamp: (combo: number) => [0, 4, 7].forEach((st, i) => tone(523 * 2 ** ((st + Math.min(combo, 6) * 2) / 12), 0.1, 'triangle', 0.07, i * 0.05)),
   good: () => {
     tone(660, 0.12, 'triangle', 0.09)
     tone(880, 0.18, 'triangle', 0.09, 0.1)

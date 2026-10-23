@@ -11,6 +11,8 @@ Implementation of *Circle of Allies: Full Game Script and Story Bible.md* as a 2
 | 4. Level 2 "Market Night" | [phase-4-level-2-market](phase-4-level-2-market/README.md) | Done |
 | 5. Level 3, story carry-over, endings, results | [phase-5-level-3-and-endings](phase-5-level-3-and-endings/README.md) | Done |
 | 6. Polish, verification and backlog | [phase-6-polish-and-backlog](phase-6-polish-and-backlog/README.md) | Partly done, see "left" |
+| 7. UI refresh ("night watch console") | [phase-7-ui-refresh](phase-7-ui-refresh/README.md) | Done, small items left |
+| 8. Gameplay fixes and level selection | [phase-8-gameplay-fixes](phase-8-gameplay-fixes/README.md) | Done |
 
 Each README lists **what is implemented** (with file links), **how to check it**, and **what is left**.
 The consolidated list of everything still open is in phase 6.
