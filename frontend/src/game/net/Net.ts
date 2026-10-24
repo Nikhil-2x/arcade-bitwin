@@ -20,7 +20,11 @@ export interface RoomStatus {
 /** Scenes the guest mirrors. Anywhere else (menu, level select) the guest waits in the room. */
 const SHARED_SCENES: readonly SceneKey[] = ['Prologue', 'Brief', 'Level', 'RoundEnd', 'LevelResult', 'Ending', 'Results']
 
-const WS_URL: string = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
+/**
+ * Room server, from VITE_WS_URL: .env.development (localhost) for `npm run dev`, .env.production (Render) for builds.
+ * Unset, it falls back to /ws on this site (the Vite proxy in dev, or backend/server.js serving the game itself).
+ */
+const WS_URL: string = import.meta.env.VITE_WS_URL || `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`
 
 type Handler<K extends RelayKind> = (msg: RelayOf<K>) => void
 
