@@ -1,5 +1,6 @@
 import Phaser from 'phaser'
 import { COLORS } from '../config/constants.ts'
+import { Net } from '../net/Net.ts'
 import { GameState } from '../state/GameState.ts'
 import type { PlayerRecord } from '../state/GameState.ts'
 import { backdrop, button, display, frame, hex, panel, text } from '../ui/widgets.ts'
@@ -63,6 +64,6 @@ export class ResultsScene extends Phaser.Scene {
       const label = copy.container.getAt(1) as Phaser.GameObjects.Text
       label.setText('COPIED')
     }, COLORS.cyan, 17)
-    button(this, 840, 650, 300, 56, 'PLAY AGAIN', () => this.scene.start('Menu'), COLORS.amber, 17)
+    button(this, 840, 650, 300, 56, 'PLAY AGAIN', Net.shared(this, 'menu', () => this.scene.start('Menu')), COLORS.amber, 17)
   }
 }

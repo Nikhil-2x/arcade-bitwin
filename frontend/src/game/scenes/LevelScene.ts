@@ -1,12 +1,14 @@
 import Phaser from 'phaser'
-import { BALANCE, COLORS, FONT, HUD_H, BAR_Y, TILE, W } from '../config/constants.ts'
+import { BALANCE, COLORS, FONT, H, HUD_H, BAR_Y, TILE, W } from '../config/constants.ts'
 import { ABILITIES } from '../data/abilities.ts'
 import { CODE_PHRASES, FAKE_PHRASES, RIDE_OPTIONS, SCAMS, TRUST_OPTIONS, cardById } from '../data/helplines.ts'
 import { LEVELS } from '../data/levels/index.ts'
 import type { LevelDef } from '../data/levels/index.ts'
 import { Crewmate } from '../entities/Crewmate.ts'
 import { NPC_COLORS } from '../entities/Ally.ts'
-import type { Ally } from '../entities/Ally.ts'
+import type { Ally, AllyMode } from '../entities/Ally.ts'
+import { Net, waitingPlate } from '../net/Net.ts'
+import type { AllySnap, Audience, LevelFx, LevelSnap, SfxName } from '../net/protocol.ts'
 import { GameState } from '../state/GameState.ts'
 import type { PlayerRecord, Step, Story } from '../state/GameState.ts'
 import { BarrierAI } from '../systems/BarrierAI.ts'
@@ -24,6 +26,31 @@ import type { PromptConfig, PromptResult } from './PromptScene.ts'
 const T = TILE
 const FAST_FORWARD = import.meta.env.DEV ? Number(/ff=(\d+)/.exec(location.hash)?.[1] ?? 1) : 1
 const dist = (ax: number, ay: number, bx: number, by: number) => Math.hypot(ax - bx, ay - by)
+/** How far Priya's own screen is zoomed in on two computers. */
+const RUNNER_ZOOM = 2
+
+/** One side's controls: this keyboard, the other computer's keys, or nothing. */
+interface Pad {
+  down(key: string): boolean
+  /** Pressed since the last check (like Phaser's JustDown). */
+  tap(key: string): boolean
+}
+const NO_PAD: Pad = { down: () => false, tap: () => false }
+const keyPad = (keys: Record<string, Phaser.Input.Keyboard.Key>): Pad => ({
+  down: (k) => keys[k].isDown,
+  tap: (k) => Phaser.Input.Keyboard.JustDown(keys[k]),
+})
+/** Keys held and pressed on the other computer, as last reported. */
+class NetPad implements Pad {
+  held = new Set<string>()
+  taps = new Set<string>()
+  down(k: string) {
+    return this.held.has(k)
+  }
+  tap(k: string) {
+    return this.taps.delete(k)
+  }
+}
 
 interface LampObj {
   def: LampDef
@@ -103,6 +130,24 @@ export class LevelScene extends Phaser.Scene {
   ring!: Phaser.GameObjects.Graphics
   cursor = { x: 640, y: 360 }
   aim = { x: 640, y: 360 }
+  /** 'full' when one screen shows both sides (solo, one keyboard); on two computers, the side this one plays. */
+  view: 'full' | 'runner' | 'barrier' = 'full'
+  /** This computer runs the rules. False on a room's guest, which draws what the host sends. */
+  authority = true
+  private runnerPad: Pad = NO_PAD
+  private barrierPad: Pad = NO_PAD
+  private remotePad = new NetPad()
+  /** Where the Runner on the other computer says Priya is. */
+  private remoteRun: [number, number] | null = null
+  private latest: LevelSnap | null = null
+  private snapAge = 0
+  private sendT = 0
+  private nextUid = 1
+  private priyaMoving = false
+  private progFrac = -1
+  private focusAt: [number, number] | null = null
+  private callPlate?: Phaser.GameObjects.Container
+  private gateLook = new Map<GateObj, string>()
   private ai?: BarrierAI
   private keys!: Record<string, Phaser.Input.Keyboard.Key>
   private useHint!: Phaser.GameObjects.Text
@@ -171,6 +216,16 @@ export class LevelScene extends Phaser.Scene {
     this.now = 0
     this.elapsed = 0
     this.run = this.freshRun()
+    this.remotePad = new NetPad()
+    this.remoteRun = null
+    this.latest = null
+    this.snapAge = 0
+    this.sendT = 0
+    this.nextUid = 1
+    this.progFrac = -1
+    this.focusAt = null
+    this.callPlate = undefined
+    this.gateLook = new Map()
   }
 
   create() {
@@ -178,6 +233,9 @@ export class LevelScene extends Phaser.Scene {
     this.def = LEVELS[this.step.level]
     this.rec = GameState.runner()
     this.story = this.rec.story
+    const me = Net.localPlayer
+    this.view = me === null ? 'full' : me === this.step.runner ? 'runner' : 'barrier'
+    this.authority = !Net.isGuest
     const data = this.def.map(this.story)
     this.world = new World(data)
     this.goalRect = data.goal
@@ -200,37 +258,63 @@ export class LevelScene extends Phaser.Scene {
     this.trail.push([sx, sy])
 
     const darkness = this.def.theme === 'underpass' ? 0.93 : this.def.theme === 'market' ? 0.84 : 0.88
-    this.light = new LightSystem(this, darkness)
+    // Priya's own screen is darker: she only sees what her light and the lamps reach
+    this.light = new LightSystem(this, this.view === 'runner' ? Math.min(0.97, darkness + 0.07) : darkness)
 
     const barrierIsAI = GameState.aiBarrier
     this.barrier = new BarrierSystem(this.def.abilities, this.def.energyStart + (this.story.fellForScam && this.step.level === 3 ? 20 : 0))
     const { runner, barrier } = this.step
-    this.hud = new Hud(this, {
+    this.hud = new Hud(this.view === 'runner' ? this.hudLayer() : this, {
       runnerLabel: 'PRIYA  (Runner)',
       barrierLabel: this.def.persona.name.toUpperCase(),
       runnerTag: { text: barrierIsAI ? 'P1' : `P${runner + 1}`, color: GameState.playerColor(runner) },
       barrierTag: { text: barrierIsAI ? 'AI' : `P${barrier + 1}`, color: GameState.playerColor(barrier) },
       abilities: this.def.abilities,
       aiBarrier: barrierIsAI,
-      onAbility: (id) => !barrierIsAI && this.useAbility(id, true),
+      view: this.view,
+      onAbility: (id) => this.pressAbility(id),
     })
-    if (barrierIsAI) this.ai = new BarrierAI(this)
+    this.ai = barrierIsAI ? new BarrierAI(this) : undefined
 
     this.ghost = this.add.image(640, 360, 'ghost').setScale(0.6).setDepth(15).setAlpha(0.9)
     this.ring = this.add.graphics().setDepth(14)
     this.progressGfx = this.add.graphics().setDepth(16)
     this.useHint = text(this, 0, 0, '', 15, '#ffffff').setOrigin(0.5, 1).setDepth(17)
+    // the Barrier's cursor is theirs alone
+    if (this.view === 'runner') {
+      this.ghost.setVisible(false)
+      this.ring.setVisible(false)
+      this.followPriya()
+    }
 
     this.setupInput()
-    this.startAllies()
+    this.wireNet()
     this.cameras.main.fadeIn(350, 0, 0, 0)
-    this.hud.toast(
+    // a room's guest gets the opening messages and allies from the host
+    if (!this.authority) return
+    this.startAllies()
+    this.toast(
       barrierIsAI
         ? `Level ${this.def.id}: ${this.def.title}`
         : `Level ${this.def.id}: Player ${runner + 1} is Priya, Player ${barrier + 1} is the Barrier`,
       GameState.playerColor(runner),
     )
-    this.hud.intel(`${this.def.persona.name} wakes. Energy ${this.barrier.energy.toFixed(0)}`, 0)
+    this.intel(`${this.def.persona.name} wakes. Energy ${this.barrier.energy.toFixed(0)}`)
+  }
+
+  /** Priya's screen on two computers: zoomed in and following her, with the HUD in its own unzoomed layer. */
+  private followPriya() {
+    const cam = this.cameras.main
+    cam.setViewport(0, HUD_H, W, H - HUD_H)
+    cam.setBounds(0, HUD_H, W, BAR_Y - HUD_H)
+    cam.setZoom(RUNNER_ZOOM)
+    cam.startFollow(this.priya, true, 0.12, 0.12)
+  }
+
+  private hudLayer() {
+    this.scene.launch('LevelHud')
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.scene.stop('LevelHud'))
+    return this.scene.get('LevelHud')
   }
 
   private startBattery() {
@@ -355,7 +439,11 @@ export class LevelScene extends Phaser.Scene {
   private setupInput() {
     const kb = this.input.keyboard!
     this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,F,E,Q,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT') as Record<string, Phaser.Input.Keyboard.Key>
-    if (!GameState.aiBarrier) {
+    // one keyboard drives both sides; on two computers it drives only this computer's side
+    const local = keyPad(this.keys)
+    this.runnerPad = this.view === 'barrier' ? this.remotePad : local
+    this.barrierPad = this.view === 'runner' ? NO_PAD : local
+    if (!GameState.aiBarrier && this.view !== 'runner') {
       this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
         if (p.y > HUD_H && p.y < BAR_Y) this.aim = { x: p.x, y: p.y }
       })
@@ -365,7 +453,7 @@ export class LevelScene extends Phaser.Scene {
   private startAllies() {
     const starters = this.def.startAllies(this.story, this.story.lostLast)
     starters.forEach((a, i) => this.spawnHelper(a.id, a.color, a.label, Infinity, 36 + i * 24, false))
-    if (starters.length) this.hud.toast(`${starters.map((s) => s.label).join(' & ')} found you`, COLORS.green)
+    if (starters.length) this.toast(`${starters.map((s) => s.label).join(' & ')} found you`, COLORS.green)
   }
 
   // ───────────────────────────── allies ─────────────────────────────
@@ -381,7 +469,7 @@ export class LevelScene extends Phaser.Scene {
 
   private spawnHelper(id: string, color: string, label: string, ttl: number, radius = 90, pop = true, silent = false): Ally | null {
     if (this.followers().length >= BALANCE.maxAllies) {
-      this.hud.toast('Her circle is full', COLORS.yellow)
+      this.toast('Her circle is full', COLORS.yellow)
       return null
     }
     let x = this.px
@@ -400,10 +488,10 @@ export class LevelScene extends Phaser.Scene {
     if (pop) {
       crew.popIn()
       this.puff(x, y)
-      Sfx.pop()
+      this.sfx('pop')
     }
     const a: Ally = { id, crew, mode: 'follow', ttl, path: [], repath: 0, joined: true, lastX: x, lastY: y }
-    this.allies.push(a)
+    this.addAlly(a, label)
     this.onJoin(a, silent)
     return a
   }
@@ -413,7 +501,7 @@ export class LevelScene extends Phaser.Scene {
     const crew = new Crewmate(this, from[0], from[1], color).setDepth(5).setLabel(label, FONT)
     crew.popIn()
     const a: Ally = { id, crew, mode: 'walk', ttl, path: [], repath: 0, joined: false, lastX: from[0], lastY: from[1] }
-    this.allies.push(a)
+    this.addAlly(a, label)
     this.puff(from[0], from[1])
   }
 
@@ -426,12 +514,24 @@ export class LevelScene extends Phaser.Scene {
     if (this.def.id === 3) this.rec.l3Allies++
     if (silent) return
     const locked = this.barrier.lockStrongest(this.now, BALANCE.abilityLockTime)
-    this.hud.toast(`${a.crew.color === 'white' ? 'A helper' : 'An ally'} joined her circle${locked ? `: ${ABILITIES[locked].name} locked` : ''}`, COLORS.green)
-    this.hud.intel('An ally joined Priya', this.now * 1000)
-    Sfx.good()
+    this.toast(`${a.crew.color === 'white' ? 'A helper' : 'An ally'} joined her circle${locked ? `: ${ABILITIES[locked].name} locked` : ''}`, COLORS.green)
+    this.intel('An ally joined Priya')
+    this.sfx('good')
   }
 
-  private puff(x: number, y: number, tint = 0x9eecff) {
+  private addAlly(a: Ally, label?: string) {
+    a.uid = this.nextUid++
+    a.label = label
+    this.allies.push(a)
+  }
+
+  /** Burst of dots. A Barrier ability's burst would give away their cursor, so Priya's screen skips it. */
+  private puff(x: number, y: number, tint = 0x9eecff, barrier = false) {
+    if (Net.isHost) Net.send({ k: 'fx', fx: { f: 'puff', x, y, tint, barrier } })
+    if (!(barrier && this.view === 'runner')) this.spawnPuff(x, y, tint)
+  }
+
+  private spawnPuff(x: number, y: number, tint: number) {
     const p = this.add.particles(x, y, 'dot', {
       speed: { min: 40, max: 130 },
       lifespan: 520,
@@ -487,7 +587,7 @@ export class LevelScene extends Phaser.Scene {
           if (a.home) {
             a.mode = 'return'
             a.path = this.world.path(c.x, c.y, a.home[0], a.home[1])
-            this.hud.toast(`${c.color === 'orange' ? 'Mr. Salim' : 'Your ally'} heads back`, COLORS.white)
+            this.toast(`${c.color === 'orange' ? 'Mr. Salim' : 'Your ally'} heads back`, COLORS.white)
           } else {
             this.allies = this.allies.filter((x) => x !== a)
             c.popOut(() => c.destroy())
@@ -516,9 +616,15 @@ export class LevelScene extends Phaser.Scene {
   update(_t: number, delta: number) {
     if (this.run.ended) return
     const dt = Math.min(0.05, delta / 1000)
+    if (!this.authority) {
+      this.mirror(dt)
+      return this.render()
+    }
     // dev only (#ff=N): run N logic ticks per frame to fast-forward a round
     for (let i = 0; i < FAST_FORWARD && !this.run.ended; i++) this.tick(dt)
+    this.remotePad.taps.clear()
     this.render()
+    this.broadcast(dt)
   }
 
   private tick(dt: number) {
@@ -544,10 +650,10 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private movePriya(dt: number) {
-    const k = this.keys
+    const k = this.runnerPad
     const solo = GameState.aiBarrier
-    let dx = (k.D.isDown || (solo && k.RIGHT.isDown) ? 1 : 0) - (k.A.isDown || (solo && k.LEFT.isDown) ? 1 : 0)
-    let dy = (k.S.isDown || (solo && k.DOWN.isDown) ? 1 : 0) - (k.W.isDown || (solo && k.UP.isDown) ? 1 : 0)
+    let dx = (k.down('D') || (solo && k.down('RIGHT')) ? 1 : 0) - (k.down('A') || (solo && k.down('LEFT')) ? 1 : 0)
+    let dy = (k.down('S') || (solo && k.down('DOWN')) ? 1 : 0) - (k.down('W') || (solo && k.down('UP')) ? 1 : 0)
     const wantsMove = dx !== 0 || dy !== 0
     const frozen = this.run.frozen > 0 || (this.busy && !this.busy.cancel) || this.promptActive
     if (this.run.frozen > 0) this.run.frozen -= dt
@@ -557,7 +663,12 @@ export class LevelScene extends Phaser.Scene {
       dy *= Math.SQRT1_2
     }
     const speed = BALANCE.playerSpeed * (this.run.battery <= 0 ? 0.92 : 1)
-    const [nx, ny] = this.world.move(this.px, this.py, dx * speed * dt, dy * speed * dt)
+    let [nx, ny] = this.world.move(this.px, this.py, dx * speed * dt, dy * speed * dt)
+    // a Runner on the other computer walks Priya there without lag; this side checks it is a real step
+    if (this.view === 'barrier' && this.remoteRun && !frozen) {
+      const [rx, ry] = this.remoteRun
+      if (this.world.walkable(World.tile(rx), World.tile(ry)) && dist(rx, ry, this.px, this.py) < 60) [nx, ny] = [rx, ry]
+    }
     const moved = dist(nx, ny, this.px, this.py)
     // time lost to closed gates counts as delay for the Barrier
     if (wantsMove && !frozen && moved < 0.2) {
@@ -569,7 +680,8 @@ export class LevelScene extends Phaser.Scene {
     this.px = nx
     this.py = ny
     this.priya.setPosition(nx, ny).setDepth(5 + ny / 1000)
-    this.priya.animate(dt, moved > 0.3, this.vxSmooth)
+    this.priyaMoving = moved > 0.3
+    this.priya.animate(dt, this.priyaMoving, this.vxSmooth)
 
     const last = this.trail[this.trail.length - 1]
     if (dist(last[0], last[1], nx, ny) > 7) {
@@ -582,13 +694,15 @@ export class LevelScene extends Phaser.Scene {
   private vxSmooth = 0
 
   private handleActions(dt: number) {
-    const k = this.keys
-    if (Phaser.Input.Keyboard.JustDown(k.F) && this.run.battery > 0) {
+    const k = this.runnerPad
+    if (k.tap('F') && this.run.battery > 0) {
       this.run.flashlight = !this.run.flashlight
-      Sfx.click()
+      this.sfx('click')
     }
-    if (Phaser.Input.Keyboard.JustDown(k.E)) this.shareLocation()
-    if (Phaser.Input.Keyboard.JustDown(k.Q)) this.callExtraAlly()
+    if (k.tap('E')) this.shareLocation()
+    if (k.tap('Q')) this.callExtraAlly()
+    this.progFrac = -1
+    this.focusAt = null
 
     this.progressGfx.clear()
     if (this.busy) {
@@ -610,12 +724,13 @@ export class LevelScene extends Phaser.Scene {
       return
     }
     this.useHint.setText(`[SPACE] ${focus.label}`).setPosition(this.px, this.py - 52)
+    this.focusAt = focus.kind === 'report' ? [focus.lamp.x, focus.lamp.y + 10] : focus.kind === 'verify' ? [focus.sign.x, focus.sign.y] : [focus.npc.x, focus.npc.y]
     const id = focus.kind === 'report' ? `l${focus.lamp.x}` : focus.kind === 'verify' ? focus.sign.id : focus.npc.def.id
     if (focus.kind === 'npc') {
-      if (Phaser.Input.Keyboard.JustDown(k.SPACE)) this.useNpc(focus.npc)
+      if (k.tap('SPACE')) this.useNpc(focus.npc)
       return
     }
-    if (k.SPACE.isDown) {
+    if (k.down('SPACE')) {
       if (this.hold.id !== id) this.hold = { id, t: 0 }
       this.hold.t += dt
       this.drawProgress(this.hold.t / focus.need, focus.kind === 'report' ? 'Reporting' : 'Checking map')
@@ -628,6 +743,7 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private drawProgress(frac: number, label: string) {
+    this.progFrac = frac
     const g = this.progressGfx
     const x = this.px
     const y = this.py - 64
@@ -666,9 +782,9 @@ export class LevelScene extends Phaser.Scene {
     this.rec.faults++
     this.run.awareness += 15
     if (this.def.id === 1) this.story.reportedLight = true
-    this.hud.toast('Fault reported: the light stays on for the round (+15 aware)', COLORS.green)
-    this.hud.intel('Priya reported a broken light', this.now * 1000)
-    Sfx.good()
+    this.toast('Fault reported: the light stays on for the round (+15 aware)', COLORS.green)
+    this.intel('Priya reported a broken light')
+    this.sfx('good')
     this.puff(l.x, l.y + 6, 0xffe08a)
   }
 
@@ -677,12 +793,12 @@ export class LevelScene extends Phaser.Scene {
     s.verified = true
     if (s.fake) {
       s.fake = false
-      this.hud.toast('The map says: that sign was FAKE. Fixed!', COLORS.red)
+      this.toast('The map says: that sign was FAKE. Fixed!', COLORS.red)
       this.run.awareness += 10
-    } else this.hud.toast('The map confirms this sign is real', COLORS.green)
+    } else this.toast('The map confirms this sign is real', COLORS.green)
     this.drawSign(s)
-    Sfx.good()
-    this.hud.intel('Priya checked a sign on the map', this.now * 1000)
+    this.sfx('good')
+    this.intel('Priya checked a sign on the map')
   }
 
   private useNpc(n: NpcObj) {
@@ -693,10 +809,10 @@ export class LevelScene extends Phaser.Scene {
         done: () => {
           this.story.helpedKavya = true
           this.run.awareness += 20
-          this.hud.toast('Kavya is okay. She walks with you!', COLORS.yellow)
+          this.toast('Kavya is okay. She walks with you!', COLORS.yellow)
           const a: Ally = { id: 'kavya', crew: n.crew, mode: 'follow', ttl: Infinity, path: [], repath: 0, joined: false, lastX: n.crew.x, lastY: n.crew.y }
           n.crew.setLabel('Kavya', FONT)
-          this.allies.push(a)
+          this.addAlly(a, 'Kavya')
           this.onJoin(a)
         },
       }
@@ -705,30 +821,30 @@ export class LevelScene extends Phaser.Scene {
     }
     if (this.followers().length >= BALANCE.maxAllies) {
       n.used = false
-      return this.hud.toast('Her circle is full', COLORS.yellow)
+      return this.toast('Her circle is full', COLORS.yellow)
     }
     const a: Ally = { id: n.def.id, crew: n.crew, mode: 'follow', ttl: BALANCE.helperAllyTime, path: [], repath: 0, home: [n.x, n.y], joined: false, lastX: n.crew.x, lastY: n.crew.y }
-    this.allies.push(a)
+    this.addAlly(a)
     this.run.awareness += 10
     this.onJoin(a)
   }
 
   private shareLocation() {
     const r = this.run
-    if (r.battery <= 0) return this.hud.toast('Phone is dead: cannot share location', COLORS.red)
-    if (r.shares <= 0) return this.hud.toast('No Share Location uses left', COLORS.red)
+    if (r.battery <= 0) return this.toast('Phone is dead: cannot share location', COLORS.red)
+    if (r.shares <= 0) return this.toast('No Share Location uses left', COLORS.red)
     r.shares--
     r.battery = Math.max(0, r.battery - BALANCE.shareLocationCost)
     r.isolateUntil = 0
-    this.hud.toast('Location shared: your circle knows where you are', COLORS.cyan)
-    this.hud.intel('Priya shared her location', this.now * 1000)
-    Sfx.phone()
+    this.toast('Location shared: your circle knows where you are', COLORS.cyan)
+    this.intel('Priya shared her location')
+    this.sfx('phone')
   }
 
   private callExtraAlly() {
     const r = this.run
-    if (r.awareness < BALANCE.callAllyCost) return this.hud.toast(`Need ${BALANCE.callAllyCost} awareness points to call an ally`, COLORS.yellow)
-    if (this.followers().length >= BALANCE.maxAllies) return this.hud.toast('Her circle is full', COLORS.yellow)
+    if (r.awareness < BALANCE.callAllyCost) return this.toast(`Need ${BALANCE.callAllyCost} awareness points to call an ally`, COLORS.yellow)
+    if (this.followers().length >= BALANCE.maxAllies) return this.toast('Her circle is full', COLORS.yellow)
     r.awareness -= BALANCE.callAllyCost
     this.spawnHelper('helper', 'white', 'Helper', BALANCE.helperAllyTime)
   }
@@ -769,8 +885,8 @@ export class LevelScene extends Phaser.Scene {
         g.passed = true
         this.run.shortcuts++
         this.story.tookShortcut++
-        this.hud.toast('Shortcut through a dark alley', COLORS.yellow)
-        this.hud.intel('Priya took a dark shortcut', this.now * 1000)
+        this.toast('Shortcut through a dark alley', COLORS.yellow)
+        this.intel('Priya took a dark shortcut')
       }
     }
   }
@@ -827,9 +943,9 @@ export class LevelScene extends Phaser.Scene {
       r.battery = Math.min(100, r.battery + gain)
       if (!r.charged) {
         r.charged = true
-        this.hud.toast('Safe Zone: charging your phone and hidden from the Barrier', COLORS.green)
-        this.hud.intel('Priya vanished inside a Safe Zone', this.now * 1000)
-        Sfx.good()
+        this.toast('Safe Zone: charging your phone and hidden from the Barrier', COLORS.green)
+        this.intel('Priya vanished inside a Safe Zone')
+        this.sfx('good')
       }
     }
 
@@ -858,7 +974,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.story.checkedIn && !r.meeraSent && this.elapsed > this.def.time - 10 && !this.allies.some((a) => a.id === 'meera')) {
       r.meeraSent = true
       this.sendWalker('meera', 'cyan', 'Meera', Infinity, World.center(this.goalRect[0] + 1, this.goalRect[1]))
-      this.hud.toast('You are late: Meera starts walking towards you', COLORS.cyan)
+      this.toast('You are late: Meera starts walking towards you', COLORS.cyan)
     }
     if (this.def.id === 3 && this.story.fellForScam && !r.scamEcho && this.elapsed > 6) {
       r.scamEcho = true
@@ -867,7 +983,7 @@ export class LevelScene extends Phaser.Scene {
     if (this.def.id === 3 && GameState.surpriseAlly && !r.bystanderSent && this.elapsed > 25) {
       r.bystanderSent = true
       this.sendWalker('bystander', 'green', 'Bystander', BALANCE.helperAllyTime + 10, this.farTile(8, 20))
-      this.hud.toast('Someone who stopped to help is coming!', COLORS.green)
+      this.toast('Someone who stopped to help is coming!', COLORS.green)
     }
   }
 
@@ -907,11 +1023,14 @@ export class LevelScene extends Phaser.Scene {
     this.hold = { id: '', t: 0 }
     this.progressGfx.clear()
     this.scene.pause()
-    this.scene.launch('Prompt', {
+    // Priya's cards go to whoever plays Priya; on two computers the other screen says she is on a call
+    if (Net.isHost) Net.send({ k: 'fx', fx: { f: 'call', title: cfg.title } })
+    Net.prompt(this, this.step.runner, {
       ...cfg,
       parent: 'Level',
       onDone: (r: PromptResult) => {
         this.promptActive = false
+        if (Net.isHost) Net.send({ k: 'fx', fx: { f: 'call', title: null } })
         onDone(r)
       },
     } satisfies PromptConfig)
@@ -921,7 +1040,7 @@ export class LevelScene extends Phaser.Scene {
     const card = cardById(id)
     const r = this.run
     if (r.battery <= 0) {
-      this.hud.toast('Phone is dead: the call never connected', COLORS.red)
+      this.toast('Phone is dead: the call never connected', COLORS.red)
       this.penalty('wrong', card)
       return
     }
@@ -952,7 +1071,7 @@ export class LevelScene extends Phaser.Scene {
           r.battery = Math.min(100, r.battery + BALANCE.correctCallBattery)
           r.awareness += 10
           this.spawnHelper('helper', 'white', 'Helper', BALANCE.helperAllyTime)
-          this.hud.intel('Priya made a correct call', this.now * 1000)
+          this.intel('Priya made a correct call')
         } else this.penalty('wrong', card)
       },
     )
@@ -967,8 +1086,9 @@ export class LevelScene extends Phaser.Scene {
     r.shrinkUntil = this.now + 6
     this.barrier.addEnergy(BALANCE.wrongCallEnergy)
     this.rec.missedHelplines.push({ text: card.text, answer: card.correct.map((i) => card.options[i]).join('  or  ') })
-    this.hud.intel(`Priya called the wrong number (${r.wrong}/${BALANCE.maxWrongCalls})`, this.now * 1000)
+    this.intel(`Priya called the wrong number (${r.wrong}/${BALANCE.maxWrongCalls})`)
     this.cameras.main.shake(220, 0.004)
+    if (Net.isHost) Net.send({ k: 'fx', fx: { f: 'shake', ms: 220, amt: 0.004 } })
   }
 
   private trustCheck() {
@@ -990,8 +1110,8 @@ export class LevelScene extends Phaser.Scene {
         } else {
           this.run.frozen = 4
           this.barrier.addEnergy(10)
-          this.hud.toast('You wasted time in the dark alley', COLORS.red)
-          this.hud.intel('Priya trusted an unsafe place', this.now * 1000)
+          this.toast('You wasted time in the dark alley', COLORS.red)
+          this.intel('Priya trusted an unsafe place')
         }
       },
     )
@@ -1015,12 +1135,12 @@ export class LevelScene extends Phaser.Scene {
         if (res.correct) {
           this.run.awareness += res.choice[0] === 2 ? 15 : 10
           this.barrier.lock('fakeMsg', this.now + BALANCE.abilityLockTime)
-          this.hud.toast('Scam avoided: Fake Message locked for 10s', COLORS.green)
+          this.toast('Scam avoided: Fake Message locked for 10s', COLORS.green)
         } else {
           this.story.fellForScam = true
           this.run.battery = Math.max(0, this.run.battery - 20)
-          this.hud.toast('Trust alert: a fake app drained 20% battery', COLORS.red)
-          this.hud.intel('Priya fell for the scam', this.now * 1000)
+          this.toast('Trust alert: a fake app drained 20% battery', COLORS.red)
+          this.intel('Priya fell for the scam')
         }
         void fromBarrier
       },
@@ -1076,11 +1196,11 @@ export class LevelScene extends Phaser.Scene {
           this.run.awareness += 20
           this.barrier.lockForever('decoy')
           this.barrier.lockForever('fakeMsg')
-          this.hud.toast('Smooth ride: the Barrier loses Decoy and Fake Message', COLORS.green)
+          this.toast('Smooth ride: the Barrier loses Decoy and Fake Message', COLORS.green)
         } else {
           this.barrier.addEnergy(30)
           this.signs.forEach((s) => ((s.fake = !s.verified), this.drawSign(s)))
-          this.hud.toast('Skipped checks: the Barrier gets a free Decoy', COLORS.red)
+          this.toast('Skipped checks: the Barrier gets a free Decoy', COLORS.red)
         }
       },
     )
@@ -1089,18 +1209,18 @@ export class LevelScene extends Phaser.Scene {
   // ───────────────────────────── barrier ─────────────────────────────
 
   private updateBarrierInput(dt: number) {
-    const k = this.keys
+    const k = this.barrierPad
     if (!GameState.aiBarrier) {
-      const dx = (k.RIGHT.isDown ? 1 : 0) - (k.LEFT.isDown ? 1 : 0)
-      const dy = (k.DOWN.isDown ? 1 : 0) - (k.UP.isDown ? 1 : 0)
+      const dx = (k.down('RIGHT') ? 1 : 0) - (k.down('LEFT') ? 1 : 0)
+      const dy = (k.down('DOWN') ? 1 : 0) - (k.down('UP') ? 1 : 0)
       if (dx || dy) {
         this.aim.x = Phaser.Math.Clamp(this.aim.x + dx * 420 * dt, 10, W - 10)
         this.aim.y = Phaser.Math.Clamp(this.aim.y + dy * 420 * dt, HUD_H + 10, BAR_Y - 10)
       }
-      const nums = [k.ONE, k.TWO, k.THREE, k.FOUR, k.FIVE, k.SIX, k.SEVEN, k.EIGHT]
+      const nums = ['ONE', 'TWO', 'THREE', 'FOUR', 'FIVE', 'SIX', 'SEVEN', 'EIGHT']
       nums.forEach((key, i) => {
         const id = this.def.abilities[i]
-        if (id && Phaser.Input.Keyboard.JustDown(key)) this.useAbility(id, true)
+        if (id && k.tap(key)) this.pressAbility(id)
       })
     }
     this.cursor.x = Phaser.Math.Linear(this.cursor.x, this.aim.x, Math.min(1, dt * 12))
@@ -1111,11 +1231,18 @@ export class LevelScene extends Phaser.Scene {
     return this.inZone() >= 0
   }
 
+  /** The Barrier player asked for an ability (key or click). A room's guest sends it to the host. */
+  private pressAbility(id: AbilityId) {
+    if (GameState.aiBarrier || this.view === 'runner') return
+    if (!this.authority) return Net.send({ k: 'ability', id, x: this.cursor.x, y: this.cursor.y })
+    this.useAbility(id, true)
+  }
+
   /** Runs one Barrier ability at the cursor. Returns true if it fired. */
   useAbility(id: AbilityId, announce = false): boolean {
     if (this.run.ended || this.promptActive) return false
     const fail = (msg: string) => {
-      if (announce) this.hud.toast(msg, COLORS.purple)
+      if (announce) this.toast(msg, COLORS.purple, 'barrier')
       return false
     }
     const reason = this.barrier.blockedReason(id, this.now)
@@ -1142,7 +1269,7 @@ export class LevelScene extends Phaser.Scene {
         if (this.world.inRect(this.px, this.py, [g.x / T - 0.5, g.y / T - 0.5, g.w / T + 1, g.h / T + 1])) return fail('Close the Way: Priya is standing in it')
         g.closedUntil = this.now + 8
         r.exploits.gates++
-        this.hud.intel('The way ahead closes', this.now * 1000)
+        this.intel('The way ahead closes')
         break
       }
       case 'decoy': {
@@ -1178,7 +1305,7 @@ export class LevelScene extends Phaser.Scene {
         if (this.inHiddenZone()) return fail('Drain: Priya is hidden in a Safe Zone')
         r.battery = Math.max(0, r.battery - 5)
         r.exploits.other++
-        this.hud.toast('A heavy app update drained 5% battery', COLORS.purple)
+        this.toast('A heavy app update drained 5% battery', COLORS.purple)
         break
       case 'flicker': {
         const g = this.nearest(this.gates.filter((x) => this.now >= x.closedUntil), cx, cy, 320, (x) => [x.x + x.w / 2, x.y + x.h / 2])
@@ -1192,13 +1319,13 @@ export class LevelScene extends Phaser.Scene {
         if (!this.followers().length) return fail('Isolate: Priya has no allies to cut off')
         r.isolateUntil = this.now + 8
         r.exploits.other++
-        this.hud.toast('Her allies lost the link! Share Location or a Code Phrase reconnects', COLORS.red)
+        this.toast('Her allies lost the link! Share Location or a Code Phrase reconnects', COLORS.red)
         break
     }
     this.barrier.spend(id, this.now)
-    Sfx.ability()
-    this.puff(cx, cy, ABILITIES[id].color)
-    this.hud.intel(`${ABILITIES[id].name} used`, this.now * 1000)
+    this.sfx('ability')
+    this.puff(cx, cy, ABILITIES[id].color, true)
+    this.intel(`${ABILITIES[id].name} used`)
     return true
   }
 
@@ -1247,6 +1374,8 @@ export class LevelScene extends Phaser.Scene {
     l.add(this.px, this.py - 10, this.priyaRadius())
     for (const a of this.activeFollowers()) l.add(a.crew.x, a.crew.y - 10, 70, 0.9)
     for (const n of this.npcs) if (!n.used && n.def.color) l.add(n.x, n.y, 44, 0.6)
+    // on Priya's zoomed screen, whatever she can use right now is lit so she can see it
+    if (this.view === 'runner' && this.focusAt) l.add(this.focusAt[0], this.focusAt[1], 52, 0.85)
 
     const t = this.now
     this.ghost.setPosition(this.cursor.x, this.cursor.y + Math.sin(t * 3) * 5).setFlipX(Math.sin(t * 0.7) > 0)
@@ -1263,11 +1392,7 @@ export class LevelScene extends Phaser.Scene {
         progress: this.world.progress(this.px, this.py),
         energy: this.barrier.energy,
         isolation: this.run.isolation,
-        abilityState: (id) => ({
-          reason: this.barrier.blockedReason(id, this.now),
-          cd: this.barrier.cooldownLeft(id, this.now),
-          uses: Math.max(0, this.barrier.usesLeft(id)),
-        }),
+        abilityState: (id) => this.abilityView(id),
       },
       this.now * 1000,
     )
@@ -1314,14 +1439,303 @@ export class LevelScene extends Phaser.Scene {
       battery: r.battery, allies: r.alliesMade, correct: r.correct, wrong: r.wrong, faults: r.faults, charged: r.charged,
     }
 
-    Sfx[win ? 'win' : 'lose']()
-    this.cameras.main.flash(300, win ? 120 : 255, win ? 255 : 60, win ? 160 : 60)
-    this.time.delayedCall(1200, () => this.cameras.main.fadeOut(500, 0, 0, 0))
+    if (Net.isHost) Net.send({ k: 'fx', fx: { f: 'end', win } })
+    this.endEffects(win)
     this.time.delayedCall(1750, () => {
       this.light.destroy()
       this.scene.start('RoundEnd')
     })
-    this.hud.toast(win ? 'She made it home!' : reason === 'isolated' ? 'Isolated in the dark...' : reason === 'calls' ? 'Help did not reach her in time' : 'Time ran out', win ? COLORS.green : COLORS.red)
+    this.toast(win ? 'She made it home!' : reason === 'isolated' ? 'Isolated in the dark...' : reason === 'calls' ? 'Help did not reach her in time' : 'Time ran out', win ? COLORS.green : COLORS.red)
     void hex
   }
+
+  private endEffects(win: boolean) {
+    Sfx[win ? 'win' : 'lose']()
+    this.cameras.main.flash(300, win ? 120 : 255, win ? 255 : 60, win ? 160 : 60)
+    this.time.delayedCall(1200, () => this.cameras.main.fadeOut(500, 0, 0, 0))
+  }
+
+  // ───────────────────────────── two computers ─────────────────────────────
+
+  /** Does this screen show a message meant for `to`? */
+  private sees(to: Audience) {
+    return to === 'all' || this.view === 'full' || this.view === to
+  }
+
+  private toast(msg: string, color: number = COLORS.white, to: Audience = 'all') {
+    if (Net.isHost) Net.send({ k: 'fx', fx: { f: 'toast', msg, color, to } })
+    if (this.sees(to)) this.hud.toast(msg, color)
+  }
+
+  /** The Barrier's intel feed (the Hud leaves it out on Priya's own screen). */
+  private intel(msg: string) {
+    if (Net.isHost) Net.send({ k: 'fx', fx: { f: 'intel', msg } })
+    this.hud.intel(msg, this.now * 1000)
+  }
+
+  private sfx(name: SfxName) {
+    if (Net.isHost) Net.send({ k: 'fx', fx: { f: 'sfx', name } })
+    Sfx[name]()
+  }
+
+  private abilityView(id: AbilityId) {
+    const i = this.def.abilities.indexOf(id)
+    if (!this.authority && this.latest?.abil[i]) {
+      const [reason, cd, uses] = this.latest.abil[i]
+      return { reason, cd, uses }
+    }
+    return { reason: this.barrier.blockedReason(id, this.now), cd: this.barrier.cooldownLeft(id, this.now), uses: Math.max(0, this.barrier.usesLeft(id)) }
+  }
+
+  /** Host: take the guest's input. Guest: take the host's snapshots and effects. */
+  private wireNet() {
+    if (!Net.online) return
+    if (this.authority) {
+      Net.onWhile(this, 'run', (m) => {
+        if (this.view !== 'barrier') return
+        this.remoteRun = [m.x, m.y]
+        this.remotePad.held = new Set(m.held)
+      })
+      Net.onWhile(this, 'tap', (m) => this.view === 'barrier' && this.remotePad.taps.add(m.key))
+      Net.onWhile(this, 'aim', (m) => this.view === 'runner' && (this.aim = { x: m.x, y: m.y }))
+      Net.onWhile(this, 'ability', (m) => {
+        if (this.view !== 'runner') return
+        this.aim = { x: m.x, y: m.y }
+        this.cursor = { x: m.x, y: m.y }
+        this.useAbility(m.id, true)
+      })
+      return
+    }
+    Net.onWhile(this, 'snap', (m) => {
+      this.latest = m.s
+      this.snapAge = 0
+    })
+    Net.onWhile(this, 'fx', (m) => this.applyFx(m.fx))
+  }
+
+  /** Host: about 20 times a second, send what the other screen needs to draw. */
+  private broadcast(dt: number) {
+    if (!Net.isHost) return
+    this.sendT -= dt
+    if (this.sendT > 0) return
+    this.sendT = 0.05
+    Net.send({ k: 'snap', s: this.snapshot() })
+  }
+
+  private snapshot(): LevelSnap {
+    const r = (v: number) => Math.round(v * 10) / 10
+    return {
+      now: this.now,
+      elapsed: this.elapsed,
+      px: r(this.px),
+      py: r(this.py),
+      vx: r(this.vxSmooth),
+      moving: this.priyaMoving,
+      frozen: this.run.frozen > 0 || (!!this.busy && !this.busy.cancel) || this.promptActive,
+      run: this.run,
+      energy: this.barrier.energy,
+      abil: this.def.abilities.map((id) => [this.barrier.blockedReason(id, this.now), this.barrier.cooldownLeft(id, this.now), Math.max(0, this.barrier.usesLeft(id))]),
+      lamps: this.lamps.map((l) => l.state),
+      gates: this.gates.map((g) => [g.closedUntil, g.fakeUntil]),
+      signs: this.signs.map((g) => [g.id, g.c, g.r, g.fake, g.verified]),
+      npcs: this.npcs.map((n) => n.used),
+      allies: this.allies.map((a) => ({
+        uid: a.uid ?? 0,
+        npc: this.npcs.findIndex((n) => n.crew === a.crew),
+        color: a.crew.color,
+        label: a.label ?? '',
+        x: r(a.crew.x),
+        y: r(a.crew.y),
+        mode: a.mode,
+        joined: a.joined,
+      })),
+      crowd: this.crowd.map((n) => [r(n.crew.x), r(n.crew.y)]),
+      hint: this.useHint.text,
+      prog: this.progFrac,
+      focus: this.focusAt,
+    }
+  }
+
+  private applyFx(fx: LevelFx) {
+    switch (fx.f) {
+      case 'toast':
+        if (this.sees(fx.to)) this.hud.toast(fx.msg, fx.color)
+        break
+      case 'intel':
+        this.hud.intel(fx.msg, this.now * 1000)
+        break
+      case 'puff':
+        if (!(fx.barrier && this.view === 'runner')) this.spawnPuff(fx.x, fx.y, fx.tint)
+        break
+      case 'sfx':
+        Sfx[fx.name]()
+        break
+      case 'shake':
+        this.cameras.main.shake(fx.ms, fx.amt)
+        break
+      case 'end':
+        this.run.ended = true
+        this.endEffects(fx.win)
+        break
+      case 'call':
+        // Priya's player sees the card itself; the Barrier sees that she is on a call
+        this.callPlate?.destroy()
+        this.callPlate = undefined
+        if (fx.title && this.view !== 'runner') this.callPlate = waitingPlate(this, 'PRIYA IS ON HER PHONE', fx.title)
+        break
+    }
+  }
+
+  /** Guest: draw the host's latest snapshot, while this player's own side moves without lag. */
+  private mirror(dt: number) {
+    const s = this.latest
+    if (!s) return
+    this.snapAge += dt
+    this.now = s.now + Math.min(this.snapAge, 0.25)
+    this.elapsed = s.elapsed + Math.min(this.snapAge, 0.25)
+    Object.assign(this.run, s.run)
+    this.barrier.energy = s.energy
+    const ease = Math.min(1, dt * 14)
+
+    s.lamps.forEach((state, i) => {
+      const l = this.lamps[i]
+      if (l && l.state !== state) {
+        l.state = state
+        this.drawLamp(l)
+      }
+    })
+    s.gates.forEach(([closedUntil, fakeUntil], i) => {
+      const g = this.gates[i]
+      if (!g) return
+      g.closedUntil = closedUntil
+      g.fakeUntil = fakeUntil
+      const closed = this.now < closedUntil
+      if (closed) this.world.closed.add(g.def.id)
+      else this.world.closed.delete(g.def.id)
+      const look = `${closed}${this.now < fakeUntil}`
+      if (this.gateLook.get(g) !== look) {
+        this.gateLook.set(g, look)
+        this.drawGate(g)
+      }
+    })
+    for (const [id, c, r, fake, verified] of s.signs) {
+      let sign = this.signs.find((x) => x.id === id)
+      if (!sign) {
+        const [x, y] = World.center(c, r)
+        sign = { id, c, r, x, y, fake, verified, gfx: this.add.graphics({ x, y }).setDepth(12) }
+        this.signs.push(sign)
+        this.drawSign(sign)
+      } else if (sign.fake !== fake || sign.verified !== verified) {
+        sign.fake = fake
+        sign.verified = verified
+        this.drawSign(sign)
+      }
+    }
+    s.npcs.forEach((used, i) => {
+      if (this.npcs[i]) this.npcs[i].used = used
+    })
+    this.mirrorAllies(s.allies, dt, ease)
+    s.crowd.forEach(([x, y], i) => {
+      const c = this.crowd[i]?.crew
+      if (!c) return
+      const nx = c.x + (x - c.x) * ease
+      const ny = c.y + (y - c.y) * ease
+      c.animate(dt, dist(nx, ny, c.x, c.y) > 0.1, nx - c.x)
+      c.setPosition(nx, ny).setDepth(5 + ny / 1000)
+    })
+
+    if (this.view === 'runner') this.walkLocally(dt, s)
+    else {
+      this.px += (s.px - this.px) * ease
+      this.py += (s.py - this.py) * ease
+      this.priya.setPosition(this.px, this.py).setDepth(5 + this.py / 1000)
+      this.priya.animate(dt, s.moving, s.vx)
+      this.updateBarrierInput(dt)
+      this.sendAim(dt)
+    }
+
+    this.focusAt = s.focus
+    this.useHint.setText(s.hint).setPosition(this.px, this.py - 52)
+    this.progressGfx.clear()
+    if (s.prog >= 0) this.drawProgress(s.prog, '')
+    if (this.run.isolation > 80) {
+      this.ambientCool -= dt
+      if (this.ambientCool <= 0) {
+        Sfx.heartbeat()
+        this.ambientCool = 0.9
+      }
+    }
+  }
+
+  /** Guest playing Priya: move her here at once and tell the host where she is. */
+  private walkLocally(dt: number, s: LevelSnap) {
+    const k = this.keys
+    let dx = (k.D.isDown ? 1 : 0) - (k.A.isDown ? 1 : 0)
+    let dy = (k.S.isDown ? 1 : 0) - (k.W.isDown ? 1 : 0)
+    // while she can't move, the host decides where she stands
+    if (s.frozen || this.scene.isActive('Prompt')) {
+      dx = dy = 0
+      this.px = s.px
+      this.py = s.py
+    }
+    if (dx && dy) {
+      dx *= Math.SQRT1_2
+      dy *= Math.SQRT1_2
+    }
+    const speed = BALANCE.playerSpeed * (this.run.battery <= 0 ? 0.92 : 1)
+    let [nx, ny] = this.world.move(this.px, this.py, dx * speed * dt, dy * speed * dt)
+    // drifted too far from the host's copy (a gate shut in her face): trust the host
+    if (dist(nx, ny, s.px, s.py) > 90) [nx, ny] = [s.px, s.py]
+    const moved = dist(nx, ny, this.px, this.py)
+    this.vxSmooth = Phaser.Math.Linear(this.vxSmooth, dx * speed, 0.4)
+    this.px = nx
+    this.py = ny
+    this.priya.setPosition(nx, ny).setDepth(5 + ny / 1000)
+    this.priya.animate(dt, moved > 0.3, this.vxSmooth)
+
+    for (const key of ['F', 'E', 'Q', 'SPACE']) if (Phaser.Input.Keyboard.JustDown(this.keys[key])) Net.send({ k: 'tap', key })
+    this.sendT -= dt
+    if (this.sendT <= 0) {
+      this.sendT = 0.033
+      Net.send({ k: 'run', x: Math.round(nx * 10) / 10, y: Math.round(ny * 10) / 10, held: ['W', 'A', 'S', 'D', 'SPACE'].filter((key) => this.keys[key].isDown) })
+    }
+  }
+
+  /** Guest playing the Barrier: keep the host's copy of the cursor close to this one. */
+  private sendAim(dt: number) {
+    this.sendT -= dt
+    if (this.sendT > 0) return
+    this.sendT = 0.05
+    Net.send({ k: 'aim', x: Math.round(this.aim.x), y: Math.round(this.aim.y) })
+  }
+
+  private mirrorAllies(list: AllySnap[], dt: number, ease: number) {
+    const seen = new Set<number>()
+    for (const a of list) {
+      seen.add(a.uid)
+      let ally = this.allies.find((x) => x.uid === a.uid)
+      if (!ally) {
+        const npc = this.npcs[a.npc]
+        const crew = npc ? npc.crew : new Crewmate(this, a.x, a.y, a.color).setDepth(5).setLabel(a.label, FONT)
+        if (npc && a.label) crew.setLabel(a.label, FONT)
+        if (!npc) crew.popIn()
+        ally = { id: '', uid: a.uid, crew, mode: a.mode as AllyMode, ttl: 0, path: [], repath: 0, joined: a.joined, lastX: crew.x, lastY: crew.y }
+        this.allies.push(ally)
+      }
+      ally.mode = a.mode as AllyMode
+      ally.joined = a.joined
+      const c = ally.crew
+      c.x += (a.x - c.x) * ease
+      c.y += (a.y - c.y) * ease
+      c.setDepth(5 + c.y / 1000)
+      c.animate(dt, dist(c.x, c.y, ally.lastX, ally.lastY) > 0.3, c.x - ally.lastX)
+      ally.lastX = c.x
+      ally.lastY = c.y
+    }
+    for (const ally of this.allies.filter((x) => !seen.has(x.uid ?? -1))) {
+      this.allies = this.allies.filter((x) => x !== ally)
+      if (!this.npcs.some((n) => n.crew === ally.crew)) ally.crew.popOut(() => ally.crew.destroy())
+    }
+  }
 }
+

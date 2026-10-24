@@ -88,3 +88,90 @@ body { font-family: "Varela Round", system-ui, sans-serif; color: var(--paper); 
 @media (prefers-reduced-motion: reduce) {
   .cursor { transition: none; }
 }
+
+/* Two-player room screen: DOM form over the Room scene, styled like the in-game console. */
+.room {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 16px;
+  overflow-y: auto;
+}
+.room-heading {
+  margin: 0;
+  font-family: "Bungee", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(28px, 5vw, 44px);
+  color: var(--sodium);
+  letter-spacing: 0.04em;
+}
+.room-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: 18px; }
+.room-card {
+  width: min(320px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px 24px;
+  background: #0f1430;
+  border: 2px solid #2a3266;
+  clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+}
+.room-card form { display: flex; flex-direction: column; gap: 12px; }
+.room-eyebrow { margin: 0; font-family: "Bungee", system-ui, sans-serif; font-size: 11px; color: #8a93c4; letter-spacing: 0.08em; }
+.room-title { margin: 0; font-family: "Bungee", system-ui, sans-serif; font-weight: 400; font-size: 22px; color: var(--paper); }
+.room-note { margin: 0; font-size: 15px; line-height: 1.4; color: #8a93c4; }
+.room-status { margin: 0; font-family: "Bungee", system-ui, sans-serif; font-size: 14px; letter-spacing: 0.04em; }
+.room-status.is-ready { color: #3ddc84; }
+.room-status.is-waiting { color: var(--ally); animation: room-pulse 1.4s ease-in-out infinite; }
+.room-error { margin: 0; color: #ff4a4a; font-size: 16px; }
+.room-code {
+  font-family: "Bungee", system-ui, sans-serif;
+  font-size: 44px;
+  letter-spacing: 0.18em;
+  color: var(--sodium);
+  background: #070914;
+  border: 2px dashed var(--sodium);
+  padding: 8px 0 8px 0.18em;
+}
+.room-input {
+  font-family: "Bungee", system-ui, sans-serif;
+  font-size: 30px;
+  letter-spacing: 0.2em;
+  text-align: center;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: #070914;
+  border: 2px solid #2a3266;
+  padding: 8px 0;
+  width: 100%;
+  min-width: 0;
+}
+.room-input:focus { outline: none; border-color: var(--ally); }
+.room-btn, .room-back {
+  font-family: "Bungee", system-ui, sans-serif;
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  padding: 12px 16px;
+  background: #0f1430;
+  border: 2px solid currentColor;
+  transition: background-color 160ms, color 160ms;
+}
+.room-btn.is-amber { color: var(--sodium); }
+.room-btn.is-cyan { color: var(--ally); }
+.room-btn.is-muted, .room-back { color: #8a93c4; }
+.room-btn:not(:disabled):hover, .room-back:hover { background: currentColor; }
+.room-btn.is-amber:not(:disabled):hover { color: var(--sodium); background: var(--sodium); }
+.room-btn:not(:disabled):hover, .room-back:hover { color: var(--ink); }
+.room-btn.is-amber:not(:disabled):hover { color: var(--ink); }
+.room-btn.is-cyan:not(:disabled):hover { background: var(--ally); }
+.room-btn.is-muted:not(:disabled):hover, .room-back:hover { background: #8a93c4; }
+.room-btn:disabled { opacity: 0.4; }
+.room-btn:focus-visible, .room-back:focus-visible, .room-code:focus-visible { outline: 2px solid var(--paper); outline-offset: 3px; }
+@keyframes room-pulse { 50% { opacity: 0.4; } }
+@media (pointer: fine) { .room, .room * { cursor: none; } }
+@media (prefers-reduced-motion: reduce) { .room-status.is-waiting { animation: none; } }

@@ -16,6 +16,10 @@ export interface Ally {
   joined: boolean
   lastX: number
   lastY: number
+  /** Stable number for this ally, so the second computer in a room can match it up. */
+  uid?: number
+  /** Name tag, for helpers that appear (recruited NPCs keep their own). */
+  label?: string
 }
 
 export const NPC_COLORS: Record<string, string> = {

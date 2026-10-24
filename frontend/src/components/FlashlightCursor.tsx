@@ -28,7 +28,9 @@ export default function FlashlightCursor() {
       y += (ty - y) * k
       el.style.transform = `translate3d(${x}px, ${y}px, 0)`
       canvas ??= document.querySelector<HTMLCanvasElement>('.game-host canvas')
-      el.classList.toggle('is-hover', canvas?.style.cursor === 'pointer')
+      // DOM pages over the canvas (the room form) count too
+      const over = document.elementFromPoint(x, y)?.closest('button:not(:disabled), input')
+      el.classList.toggle('is-hover', canvas?.style.cursor === 'pointer' || !!over)
       raf = requestAnimationFrame(tick)
     }
     addEventListener('pointermove', onMove)

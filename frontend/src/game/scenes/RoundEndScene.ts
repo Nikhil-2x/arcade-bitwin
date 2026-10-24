@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { COLORS } from '../config/constants.ts'
 import { LEVELS } from '../data/levels/index.ts'
+import { Net } from '../net/Net.ts'
 import { GameState } from '../state/GameState.ts'
 import { backdrop, banner, button, display, frame, hex, panel, text } from '../ui/widgets.ts'
 import type { PromptResult } from './PromptScene.ts'
@@ -22,6 +23,7 @@ export class RoundEndScene extends Phaser.Scene {
 
   create() {
     this.bystanderDone = false
+    this.moving = false
     const o = GameState.lastOutcome!
     const def = LEVELS[o.step.level]
     this.cameras.main.fadeIn(300, 7, 9, 20)
@@ -57,7 +59,7 @@ export class RoundEndScene extends Phaser.Scene {
     text(this, 134, 470, def.afterRound, 17, hex(COLORS.paper), { wordWrap: { width: 1010 }, lineSpacing: 4 })
     if (notes) text(this, 134, 548, notes, 15, hex(COLORS.cyan), { wordWrap: { width: 1010 } })
 
-    const b = button(this, 640, 650, 320, 56, 'CONTINUE', () => this.next(), COLORS.amber, 20)
+    const b = button(this, 640, 650, 320, 56, 'CONTINUE', Net.shared(this, 'next', () => this.next()), COLORS.amber, 20)
     this.input.keyboard?.once('keydown-SPACE', () => b.container.emit('pointerdown'))
   }
 
@@ -78,7 +80,11 @@ export class RoundEndScene extends Phaser.Scene {
     return bits.length ? 'Next: ' + bits.join('  ') : ''
   }
 
+  /** Set once the bystander card or the next scene is on its way, so a second press does nothing. */
+  private moving = false
+
   private next() {
+    if (this.moving) return
     const o = GameState.lastOutcome!
     if (o.step.level === 3 && !this.bystanderDone) return this.bystander()
     this.advance()
@@ -89,9 +95,10 @@ export class RoundEndScene extends Phaser.Scene {
   /** The Barrier player steps out of the Barrier role for a short bystander scene. */
   private bystander() {
     this.bystanderDone = true
+    this.moving = true
     const o = GameState.lastOutcome!
     const who = GameState.aiBarrier ? 0 : o.step.barrier
-    this.scene.launch('Prompt', {
+    Net.prompt(this, who, {
       parent: 'RoundEnd',
       title: `Bystander round${GameState.aiBarrier ? '' : `: Player ${who + 1}`}`,
       body: 'You are a bystander now. Someone is struggling on a street corner and you see them. What do you do?',
@@ -105,12 +112,15 @@ export class RoundEndScene extends Phaser.Scene {
         rec.barrierScore += r.correct ? 60 : 0
         GameState.tally[3]!.bystander[who] += r.correct ? 60 : 0
         GameState.surpriseAlly = r.correct
+        this.moving = false
         this.advance()
       },
     })
   }
 
   private advance() {
+    if (this.moving) return
+    this.moving = true
     GameState.stepIndex++
     this.cameras.main.fadeOut(300, 0, 0, 0)
     // once every round of the chosen level is played, show who won the level

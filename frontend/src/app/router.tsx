@@ -6,6 +6,7 @@ import LevelSelectPage from '../pages/LevelSelectPage.tsx'
 import MenuPage from '../pages/MenuPage.tsx'
 import PlayPage from '../pages/PlayPage.tsx'
 import ResultsPage from '../pages/ResultsPage.tsx'
+import RoomPage from '../pages/RoomPage.tsx'
 import { PATHS } from '../routes/paths.ts'
 
 export const router = createBrowserRouter([
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <IntroPage /> },
       { path: PATHS.menu, element: <MenuPage /> },
+      { path: PATHS.room, element: <RoomPage /> },
       { path: PATHS.levels, element: <LevelSelectPage /> },
       { path: PATHS.play, element: <PlayPage /> },
       { path: PATHS.ending, element: <EndingPage /> },

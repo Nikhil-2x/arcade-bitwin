@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { COLORS } from '../config/constants.ts'
 import { LEVELS } from '../data/levels/index.ts'
+import { Net } from '../net/Net.ts'
 import { GameState } from '../state/GameState.ts'
 import type { PlayerIdx } from '../types.ts'
 import { backdrop, banner, button, display, frame, hex, panel, text } from '../ui/widgets.ts'
@@ -70,7 +71,7 @@ export class LevelResultScene extends Phaser.Scene {
     else text(this, 640, 548, 'Each total adds what that player scored as Priya and as the Barrier.', 15, hex(COLORS.muted)).setOrigin(0.5, 0)
 
     const last = level === 3
-    const b = button(this, 640, 630, 360, 56, last ? 'SEE THE ENDING' : 'CHOOSE ANOTHER LEVEL', () => this.go(last ? 'Ending' : 'LevelSelect'), COLORS.amber, 18)
+    const b = button(this, 640, 630, 360, 56, last ? 'SEE THE ENDING' : 'CHOOSE ANOTHER LEVEL', Net.shared(this, 'go', () => this.go(last ? 'Ending' : 'LevelSelect')), COLORS.amber, 18)
     this.input.keyboard?.once('keydown-SPACE', () => b.container.emit('pointerdown'))
   }
 

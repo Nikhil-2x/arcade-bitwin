@@ -27,6 +27,29 @@ npm run build        # type-check + production build
 npm run lint
 ```
 
+### Two computers (rooms)
+
+```bash
+cd backend
+npm install
+npm run dev          # room server on :8787 (the Vite dev server proxies /ws to it)
+```
+
+Player 1 picks **Play together > Create room** and reads out the 6-letter code; Player 2 opens the same
+site, picks **Play together > Join room** and types it. For two machines in dev, run `npm run dev -- --host`
+in `frontend` and open `http://<host-ip>:5173` on the second one.
+For a deployment, `npm run build` in `frontend`, then `npm start` in `backend` serves the game and the rooms
+from one port (`PORT`, default 8787), with the SPA fallback included. `VITE_WS_URL` points the frontend at
+a room server on another host.
+
+How it works: the room creator's browser (host, Player 1) runs every rule. The guest (Player 2) shows the
+same scenes from synced state and sends its own input; the server only pairs players and relays messages.
+Roles still swap each round. Whoever plays Priya moves her on their own machine (no lag) and gets a
+zoomed, darker follow-cam with no Barrier ghost, ability bar, ability effects at the cursor or intel feed;
+the Barrier keeps the full map view. Each card goes to the player it belongs to (Priya's calls to the
+Runner, the bystander choice to the Barrier, each prologue choice to its player) while the other screen
+says who is choosing. Either player can press Start / Continue.
+
 Dev-only shortcuts (ignored in production builds): `http://localhost:5173/#dev=2` starts Level 2 solo
 straight away, and `#dev=3&ff=4` starts Level 3 and runs the simulation 4x faster per frame.
 `window.__game` exposes the Phaser game for debugging.
@@ -49,6 +72,7 @@ A cold load always runs Boot (textures + the click that unlocks audio), then goe
 | --- | --- | --- |
 | `/` | Boot, Trailer | |
 | `/menu` | Menu | |
+| `/room` | Room | two players: create / join a room, or share one keyboard |
 | `/levels` | LevelSelect | |
 | `/play/:levelId` | Prologue, Brief, Level, RoundEnd, LevelResult | opening it starts that level; bad ids go to `/levels` |
 | `/ending`, `/results` | Ending, Results | only after Level 3 was finished, else `/menu` |
@@ -63,7 +87,7 @@ main.tsx                           React entry
 app/App.tsx, app/router.tsx        RouterProvider + route table
 routes/paths.ts                    path constants, scene <-> path mapping
 layouts/GameLayout.tsx             persistent stage: canvas, overlays, <Outlet />, game -> URL sync
-pages/                             one per route; each tells the game which scene(s) it covers
+pages/                             one per route; each tells the game which scene(s) it covers (RoomPage is the room form)
 components/                        FlashlightCursor, CrtFeed, RotateNotice (DOM layers over the canvas)
 hooks/                             useGameScene (URL -> game), useSceneSync (game -> URL)
 styles/index.css                   global styles
@@ -75,6 +99,7 @@ game/                              everything Phaser, below
 ```
 createGame.ts, GameCanvas.tsx      Phaser config + React host
 sceneBridge.ts                     reports scene starts to the router, switches scenes on request
+net/Net.ts, net/protocol.ts        two-computer rooms: connection, scene sync, shared buttons, remote prompts
 config/constants.ts                screen size, colours, balance numbers (bible section 11)
 types.ts                           shared types (abilities, map data, script events)
 state/GameState.ts                 global state + per-Priya story flags (bible section 3)
@@ -93,6 +118,6 @@ systems/
   BarrierSystem.ts                 energy, cooldowns, caps, locks
   BarrierAI.ts                     solo-mode Barrier
 ui/                                Hud.ts (top bar, ability bar, toasts, intel), widgets.ts
-scenes/                            Boot, Trailer, Menu, LevelSelect, Prologue, Brief, Level, Prompt, RoundEnd, LevelResult, Ending, Results
+scenes/                            Boot, Trailer, Menu, Room, LevelSelect, LevelHud, Prologue, Brief, Level, Prompt, RoundEnd, LevelResult, Ending, Results
 utils/                             sfx.ts (WebAudio synth), shuffle.ts
 ```

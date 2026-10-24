@@ -39,14 +39,15 @@ export class LevelSelectScene extends Phaser.Scene {
     const gap = (W - 3 * CARD_W) / 4
     ;([1, 2, 3] as LevelId[]).forEach((id, i) => this.card(gap + i * (CARD_W + gap), id, i))
 
-    const back = button(this, 150, CARD_Y + CARD_H + 56, 200, 46, 'BACK', () => this.go('Menu'), COLORS.muted, 15, { key: 'ESC' })
+    const backTo = duo ? 'Room' : 'Menu'
+    const back = button(this, 150, CARD_Y + CARD_H + 56, 200, 46, 'BACK', () => this.go(backTo), COLORS.muted, 15, { key: 'ESC' })
     back.container.setDepth(5)
 
     const kb = this.input.keyboard
     kb?.on('keydown-ONE', () => this.pick(1))
     kb?.on('keydown-TWO', () => this.pick(2))
     kb?.on('keydown-THREE', () => this.pick(3))
-    kb?.on('keydown-ESC', () => this.go('Menu'))
+    kb?.on('keydown-ESC', () => this.go(backTo))
   }
 
   private card(x: number, id: LevelId, i: number) {

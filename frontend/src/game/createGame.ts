@@ -4,12 +4,14 @@ import { BootScene } from './scenes/BootScene.ts'
 import { BriefScene } from './scenes/BriefScene.ts'
 import { EndingScene } from './scenes/EndingScene.ts'
 import { LevelResultScene } from './scenes/LevelResultScene.ts'
+import { LevelHudScene } from './scenes/LevelHudScene.ts'
 import { LevelScene } from './scenes/LevelScene.ts'
 import { LevelSelectScene } from './scenes/LevelSelectScene.ts'
 import { MenuScene } from './scenes/MenuScene.ts'
 import { PrologueScene } from './scenes/PrologueScene.ts'
 import { PromptScene } from './scenes/PromptScene.ts'
 import { ResultsScene } from './scenes/ResultsScene.ts'
+import { RoomScene } from './scenes/RoomScene.ts'
 import { RoundEndScene } from './scenes/RoundEndScene.ts'
 import { TrailerScene } from './scenes/TrailerScene.ts'
 import { SceneBridge } from './sceneBridge.ts'
@@ -27,10 +29,12 @@ export function createGame(parent: HTMLElement) {
       BootScene,
       TrailerScene,
       MenuScene,
+      RoomScene,
       LevelSelectScene,
       PrologueScene,
       BriefScene,
       LevelScene,
+      LevelHudScene,
       PromptScene,
       RoundEndScene,
       LevelResultScene,

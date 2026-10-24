@@ -1,6 +1,7 @@
 import Phaser from 'phaser'
 import { COLORS } from '../config/constants.ts'
 import { Crewmate } from '../entities/Crewmate.ts'
+import { Net } from '../net/Net.ts'
 import { GameState } from '../state/GameState.ts'
 import type { PlayerRecord } from '../state/GameState.ts'
 import { backdrop, button, display, frame, hex, text } from '../ui/widgets.ts'
@@ -30,8 +31,16 @@ export class EndingScene extends Phaser.Scene {
     super('Ending')
   }
 
+  /** Button actions; in a room the guest's presses run on the host (and page turns on both screens). */
+  private act = { menu: () => {}, next: () => {}, results: () => {} }
+
   create() {
     this.idx = 0
+    this.act = {
+      menu: Net.shared(this, 'menu', () => this.scene.start('Menu')),
+      next: Net.mirrored(this, 'next', () => this.next()),
+      results: Net.shared(this, 'results', () => this.scene.start('Results')),
+    }
     this.show()
   }
 
@@ -68,9 +77,9 @@ export class EndingScene extends Phaser.Scene {
     const last = this.idx >= this.runners().length - 1
     if (key === 'silence') {
       text(this, 640, 590, 'Replay as an ally?', 22, hex(COLORS.amber)).setOrigin(0.5)
-      button(this, 460, 650, 280, 52, 'REPLAY AS AN ALLY', () => this.scene.start('Menu'), COLORS.amber, 16)
+      button(this, 460, 650, 280, 52, 'REPLAY AS AN ALLY', this.act.menu, COLORS.amber, 16)
     }
-    button(this, key === 'silence' ? 820 : 640, 650, 280, 52, last ? 'FINAL REFLECTION' : 'NEXT PRIYA', () => this.next(), COLORS.cyan, 16)
+    button(this, key === 'silence' ? 820 : 640, 650, 280, 52, last ? 'FINAL REFLECTION' : 'NEXT PRIYA', this.act.next, COLORS.cyan, 16)
   }
 
   /** Allies standing in a circle around Priya for the best ending. */
@@ -107,6 +116,6 @@ export class EndingScene extends Phaser.Scene {
     })
     const ally = display(this, 640, 390, 'IN REAL LIFE, YOU CAN BE THE ALLY.', 30, hex(COLORS.amber)).setOrigin(0.5).setAlpha(0)
     this.tweens.add({ targets: ally, alpha: 1, duration: 900, delay: 2600 })
-    button(this, 640, 560, 300, 58, 'SEE RESULTS', () => this.scene.start('Results'), COLORS.amber, 18)
+    button(this, 640, 560, 300, 58, 'SEE RESULTS', this.act.results, COLORS.amber, 18)
   }
 }

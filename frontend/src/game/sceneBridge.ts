@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 
-/** Every scene that fills the screen. Overlays (Prompt) sit on top of one of these. */
+/** Every scene that fills the screen. Overlays (Prompt, LevelHud) sit on top of one of these. */
 export type SceneKey =
   | 'Boot'
   | 'Trailer'
@@ -13,8 +13,9 @@ export type SceneKey =
   | 'LevelResult'
   | 'Ending'
   | 'Results'
+  | 'Room'
 
-const OVERLAYS = new Set(['Prompt'])
+const OVERLAYS = new Set(['Prompt', 'LevelHud'])
 
 type Listener = (key: SceneKey) => void
 
@@ -65,6 +66,11 @@ export const SceneBridge = {
       if (s.sys.isActive() || s.sys.isPaused() || s.sys.isSleeping()) game.scene.stop(s.sys.settings.key)
     }
     game.scene.start(key)
+  },
+
+  /** Run a scene on top of whatever is showing (the Prompt card). */
+  overlay(key: string, data: object) {
+    game?.scene.start(key, data)
   },
 
   /** Boot asks once where to go after its gate: the scene the URL asked for, if any. */

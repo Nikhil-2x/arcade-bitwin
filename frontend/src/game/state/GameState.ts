@@ -95,6 +95,8 @@ export interface LevelTally {
   bystander: [number, number]
 }
 
+export type GameSnapshot = Pick<GameStateImpl, 'mode' | 'players' | 'steps' | 'stepIndex' | 'lastOutcome' | 'surpriseAlly' | 'prologueDone' | 'tally'>
+
 /** Each player's colour, used wherever the UI says who is playing what. */
 export const PLAYER_COLORS: [number, number] = [0x9eecff, 0xf5e663]
 
@@ -163,6 +165,16 @@ class GameStateImpl {
   /** The barrier is an AI whenever only one human is playing. */
   get aiBarrier() {
     return this.mode === 'solo'
+  }
+
+  /** Everything a second computer needs to draw the same screens (two-player rooms). Plain JSON. */
+  snapshot(): GameSnapshot {
+    const { mode, players, steps, stepIndex, lastOutcome, surpriseAlly, prologueDone, tally } = this
+    return structuredClone({ mode, players, steps, stepIndex, lastOutcome, surpriseAlly, prologueDone, tally })
+  }
+
+  restore(s: GameSnapshot) {
+    Object.assign(this, structuredClone(s))
   }
 
   /** Level 3 has been played to the end at least once, so the ending and results have something to show. */

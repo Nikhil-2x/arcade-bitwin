@@ -1,6 +1,8 @@
 import Phaser from 'phaser'
 import { COLORS } from '../config/constants.ts'
+import { Net } from '../net/Net.ts'
 import { GameState } from '../state/GameState.ts'
+import type { PlayerIdx } from '../types.ts'
 import { frame, hex, text } from '../ui/widgets.ts'
 import { Sfx } from '../utils/sfx.ts'
 import type { PromptResult } from './PromptScene.ts'
@@ -17,6 +19,8 @@ export class PrologueScene extends Phaser.Scene {
     const pulse = this.add.circle(640, 360, 40, 0x9eecff, 0.0)
     this.tweens.add({ targets: pulse, alpha: { from: 0.25, to: 0 }, scale: { from: 1, to: 14 }, duration: 900, repeat: 2, onRepeat: () => Sfx.heartbeat() })
     Sfx.heartbeat()
+    // in a room the host runs the questions; the guest's screen only plays the narration when told
+    if (Net.isGuest) return Net.onCue(this, 'narrate', () => this.narrate())
     this.time.delayedCall(2600, () => this.ask(0))
   }
 
@@ -25,7 +29,7 @@ export class PrologueScene extends Phaser.Scene {
     if (k >= runners) return this.narrate()
     Sfx.phone()
     const who = runners > 1 ? `Player ${k + 1}, ` : ''
-    this.scene.launch('Prompt', {
+    Net.prompt(this, k as PlayerIdx, {
       parent: 'Prologue',
       title: `${who}before you leave`,
       from: 'Meera (text)',
@@ -40,11 +44,13 @@ export class PrologueScene extends Phaser.Scene {
   }
 
   private narrate() {
+    Net.cue(this, 'narrate')
     const lines = ['Priya checks her battery. 100%.', 'Three nights, one way home.', 'She is not alone. She just does not know it yet.']
     lines.forEach((l, i) => {
       const t = text(this, 640, 300 + i * 50, l, i === 2 ? 26 : 22, i === 2 ? hex(COLORS.amber) : hex(COLORS.paper)).setOrigin(0.5).setAlpha(0)
       this.tweens.add({ targets: t, alpha: 1, y: t.y - 8, duration: 700, delay: i * 1400, ease: 'Cubic.easeOut' })
     })
+    if (Net.isGuest) return
     this.time.delayedCall(5600, () => {
       GameState.prologueDone = true
       this.cameras.main.fadeOut(500, 0, 0, 0)

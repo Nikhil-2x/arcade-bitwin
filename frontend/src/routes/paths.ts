@@ -6,6 +6,7 @@ import type { LevelId } from '../game/types.ts'
 export const PATHS = {
   intro: '/',
   menu: '/menu',
+  room: '/room',
   levels: '/levels',
   play: '/play/:levelId',
   ending: '/ending',
@@ -33,6 +34,8 @@ export function pathForScene(key: SceneKey): string | null {
       return PATHS.intro
     case 'Menu':
       return PATHS.menu
+    case 'Room':
+      return PATHS.room
     case 'LevelSelect':
       return PATHS.levels
     case 'Ending':

@@ -73,7 +73,7 @@ export class MenuScene extends Phaser.Scene {
     const x = 980
     const entries = [
       { key: '1', label: 'PLAY SOLO', sub: 'You are Priya. The AI plays the Barrier.', mode: 'solo' as const, color: COLORS.amber },
-      { key: '2', label: 'PLAY TOGETHER', sub: 'Two players on one keyboard. Roles swap each night.', mode: 'duo' as const, color: COLORS.cyan },
+      { key: '2', label: 'PLAY TOGETHER', sub: 'One keyboard or two computers. Roles swap each night.', mode: 'duo' as const, color: COLORS.cyan },
     ]
     entries.forEach((e, i) => {
       const y = 214 + i * 128
@@ -166,7 +166,8 @@ export class MenuScene extends Phaser.Scene {
   private begin(mode: 'solo' | 'duo') {
     if (this.drawer || this.leaving) return
     GameState.newGame(mode)
-    this.go('LevelSelect')
+    // two players first choose how they play: a room across two computers, or one keyboard
+    this.go(mode === 'duo' ? 'Room' : 'LevelSelect')
   }
 
   private go(key: string) {

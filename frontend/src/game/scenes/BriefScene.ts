@@ -3,6 +3,7 @@ import { COLORS } from '../config/constants.ts'
 import { ABILITIES } from '../data/abilities.ts'
 import { CODE_PHRASES } from '../data/helplines.ts'
 import { LEVELS } from '../data/levels/index.ts'
+import { Net } from '../net/Net.ts'
 import { Crewmate } from '../entities/Crewmate.ts'
 import { GameState } from '../state/GameState.ts'
 import type { PlayerIdx } from '../types.ts'
@@ -66,15 +67,18 @@ export class BriefScene extends Phaser.Scene {
 
     const go = display(this, 640, 652, 'PRESS SPACE TO START', 22, hex(COLORS.amber)).setOrigin(0.5)
     this.tweens.add({ targets: go, alpha: 0.35, yoyo: true, repeat: -1, duration: 700 })
-    this.input.keyboard?.once('keydown-SPACE', () => this.start())
-    this.input.once('pointerdown', () => this.start())
+    // either player may start; in a room the host runs it
+    const start = Net.shared(this, 'start', () => this.start())
+    this.input.keyboard?.once('keydown-SPACE', start)
+    this.input.once('pointerdown', start)
   }
 
   /** "PLAYER 1" on a filled chip in that player's colour, then the role it plays this round. */
   private playerChip(x: number, y: number, who: PlayerIdx, role: string, roleColor: string) {
     const name = display(this, x + 8, y + 4, GameState.playerName(who).toUpperCase(), 14, hex(COLORS.bg)).setShadow(0, 0, 'transparent', 0).setDepth(1)
     this.add.rectangle(x, y, name.width + 16, 24, GameState.playerColor(who)).setOrigin(0)
-    display(this, x + name.width + 28, y + 5, role, 13, roleColor)
+    // on two computers, say which card is yours
+    display(this, x + name.width + 28, y + 5, Net.online && Net.localPlayer === who ? `${role}  (YOU)` : role, 13, roleColor)
   }
 
   /** On the second round of a level, say plainly that the players have traded sides. */
@@ -92,7 +96,7 @@ export class BriefScene extends Phaser.Scene {
     const story = GameState.runner().story
     // Level 2 unlocks the Code Phrase: Priya agrees one with Meera first.
     if (GameState.step.level === 2 && !story.codePhrase) {
-      this.scene.launch('Prompt', {
+      Net.prompt(this, GameState.step.runner, {
         parent: 'Brief',
         title: 'Code Phrase unlocked',
         from: 'Meera (text)',
