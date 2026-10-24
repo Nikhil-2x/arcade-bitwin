@@ -106,11 +106,46 @@ const TYPES = {
 }
 
 const server = createServer((req, res) => {
+  const url = new URL(req.url ?? '/', 'http://x')
+  const pathname = url.pathname.replace(/\/+$/, '') || '/'
+
+  // Health check endpoint for uptime monitors (e.g. UptimeRobot, Render keep-alive)
+  if (pathname === '/health' || pathname === '/healthz' || pathname === '/ping') {
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, {
+        'access-control-allow-origin': '*',
+        'access-control-allow-methods': 'GET, HEAD, OPTIONS',
+        'access-control-allow-headers': '*',
+      })
+      return res.end()
+    }
+
+    res.writeHead(200, {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-cache, no-store, must-revalidate',
+      'access-control-allow-origin': '*',
+    })
+
+    if (req.method === 'HEAD') {
+      return res.end()
+    }
+
+    return res.end(
+      JSON.stringify({
+        status: 'ok',
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        rooms: rooms.size,
+        connections: wss?.clients?.size ?? 0,
+      })
+    )
+  }
+
   if (!existsSync(DIST)) {
     res.writeHead(200, { 'content-type': 'text/plain' })
     return res.end('Circle of Allies room server. Build the frontend (npm run build in ../frontend) to serve it from here.')
   }
-  const path = normalize(decodeURIComponent(new URL(req.url, 'http://x').pathname)).replace(/^([/\\])+/, '')
+  const path = normalize(decodeURIComponent(url.pathname)).replace(/^([/\\])+/, '')
   let file = join(DIST, path)
   // client-side routes (/menu, /play/1, ...) all get index.html
   if (!file.startsWith(DIST) || !existsSync(file) || statSync(file).isDirectory()) file = join(DIST, 'index.html')
