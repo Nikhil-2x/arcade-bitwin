@@ -1,8 +1,12 @@
 import Phaser from 'phaser'
 import { CREW_COLORS, OUTLINE } from './palette.ts'
+import { buildCharacterTextures } from './characterTextures.ts'
+import { buildPropTextures } from './propTextures.ts'
 
 /** Generates every texture the game needs once, so no asset files are shipped. */
 export function buildTextures(scene: Phaser.Scene) {
+  buildCharacterTextures(scene)
+  buildPropTextures(scene)
   const tex = scene.textures
   const g = scene.make.graphics({ x: 0, y: 0 }, false)
 

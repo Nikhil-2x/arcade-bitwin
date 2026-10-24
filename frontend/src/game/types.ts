@@ -99,7 +99,7 @@ export interface MapData {
 export type Theme = 'lane' | 'market' | 'underpass'
 
 export interface DecorDef {
-  type: 'stall' | 'hospital' | 'cab' | 'npc' | 'barricade' | 'house'
+  type: 'stall' | 'hospital' | 'cab' | 'npc' | 'barricade' | 'house' | 'bus_stop' | 'scooter'
   c: number
   r: number
   label?: string
