@@ -63,7 +63,9 @@ export const level1: LevelDef = {
         { id: 'aunty', kind: 'ally', c: 26, r: 9, label: 'Neighbor aunty', color: 0xff7eb6 },
       ],
       decor: [
+        { type: 'bus_stop', c: 1, r: 13, label: 'BUS STOP' },
         { type: 'stall', c: 14, r: 13, label: 'Salim Tea' },
+        { type: 'scooter', c: 17, r: 14 },
         { type: 'house', c: 1, r: 3, label: 'HOME' },
       ],
     }

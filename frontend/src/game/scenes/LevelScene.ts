@@ -264,14 +264,14 @@ export class LevelScene extends Phaser.Scene {
     const barrierIsAI = GameState.aiBarrier
     this.barrier = new BarrierSystem(this.def.abilities, this.def.energyStart + (this.story.fellForScam && this.step.level === 3 ? 20 : 0))
     const { runner, barrier } = this.step
-    this.hud = new Hud(this.view === 'runner' ? this.hudLayer() : this, {
+    this.hud = new Hud(this.hudLayer(), {
       runnerLabel: 'PRIYA  (Runner)',
       barrierLabel: this.def.persona.name.toUpperCase(),
       runnerTag: { text: barrierIsAI ? 'P1' : `P${runner + 1}`, color: GameState.playerColor(runner) },
       barrierTag: { text: barrierIsAI ? 'AI' : `P${barrier + 1}`, color: GameState.playerColor(barrier) },
       abilities: this.def.abilities,
       aiBarrier: barrierIsAI,
-      view: this.view,
+      view: 'full',
       onAbility: (id) => this.pressAbility(id),
     })
     this.ai = barrierIsAI ? new BarrierAI(this) : undefined
@@ -305,8 +305,8 @@ export class LevelScene extends Phaser.Scene {
   /** Priya's screen on two computers: zoomed in and following her, with the HUD in its own unzoomed layer. */
   private followPriya() {
     const cam = this.cameras.main
-    cam.setViewport(0, HUD_H, W, H - HUD_H)
-    cam.setBounds(0, HUD_H, W, BAR_Y - HUD_H)
+    cam.setViewport(0, HUD_H, W, BAR_Y - HUD_H)
+    cam.setBounds(0, 0, W, H)
     cam.setZoom(RUNNER_ZOOM)
     cam.startFollow(this.priya, true, 0.12, 0.12)
   }
@@ -331,7 +331,7 @@ export class LevelScene extends Phaser.Scene {
       const x = d.c * T + T / 2
       const y = d.r * T + 8
       const gfx = this.add.graphics({ x, y }).setDepth(12)
-      const glow = this.add.image(x, y + 8, 'light').setBlendMode(Phaser.BlendModes.ADD).setDepth(2).setTint(0xffd27a).setAlpha(0)
+      const glow = this.add.image(x + 10, y + 2, 'light').setBlendMode(Phaser.BlendModes.ADD).setDepth(2).setTint(0xffd27a).setAlpha(0)
       const lamp: LampObj = { def: d, x, y, state: d.state, restore: d.state, outUntil: 0, gfx, glow, phase: Math.random() * 9 }
       this.lamps.push(lamp)
       this.drawLamp(lamp)
@@ -341,11 +341,29 @@ export class LevelScene extends Phaser.Scene {
   private drawLamp(l: LampObj) {
     const color = { on: 0xffe08a, fixed: 0x9bffb0, broken: 0xffa94d, off: 0x4a4f6e, out: 0x2b2f4a }[l.state]
     l.gfx.clear()
-    l.gfx.fillStyle(0x0a0c1c, 1).fillRect(-2, 4, 4, 14)
-    l.gfx.fillStyle(color, 1).fillCircle(0, 0, 7)
-    l.gfx.lineStyle(3, 0x0a0c1c, 1).strokeCircle(0, 0, 7)
-    if (l.state === 'fixed') l.gfx.lineStyle(2, 0x3ddc84, 1).strokeCircle(0, 0, 11)
-    if (l.state === 'broken') l.gfx.lineStyle(2, 0xff7a45, 1).strokeCircle(0, 0, 11)
+    // Ornate curved iron lamppost matching reference image
+    // Vertical iron post
+    l.gfx.fillStyle(0x0f172a, 1).fillRect(-2, 2, 4, 18)
+    l.gfx.fillRect(-5, 18, 10, 3) // base plate
+    // Curved arch arm extending right/up
+    l.gfx.lineStyle(2.5, 0x0f172a, 1)
+    l.gfx.lineBetween(0, 4, 3, 0)
+    l.gfx.lineBetween(3, 0, 7, -6)
+    l.gfx.lineBetween(7, -6, 12, -6)
+
+    // Bell-shaped metal shade
+    l.gfx.fillStyle(0x1e293b, 1)
+    l.gfx.fillTriangle(6, -6, 14, -6, 10, -1)
+    l.gfx.fillRect(7, -8, 6, 3)
+    l.gfx.lineStyle(1.5, 0x0f172a, 1)
+    l.gfx.strokeTriangle(6, -6, 14, -6, 10, -1)
+
+    // Glowing lantern bulb inside
+    l.gfx.fillStyle(color, 1).fillCircle(10, -2, 4.5)
+    l.gfx.lineStyle(1.8, 0x0a0c1c, 1).strokeCircle(10, -2, 4.5)
+
+    if (l.state === 'fixed') l.gfx.lineStyle(2, 0x3ddc84, 0.9).strokeCircle(10, -2, 9)
+    if (l.state === 'broken') l.gfx.lineStyle(2, 0xff7a45, 0.9).strokeCircle(10, -2, 9)
   }
 
   private buildGates(defs: GateDef[]) {
@@ -368,6 +386,7 @@ export class LevelScene extends Phaser.Scene {
     const fake = this.now < g.fakeUntil
     g.gfx.clear()
     if (closed || fake) {
+      // ── BLOCKED GATE / SHORTCUT: Bold Hazard Barricade ──
       const n = Math.max(2, Math.round(Math.max(g.w, g.h) / 20))
       for (let i = 0; i < n; i++) {
         g.gfx.fillStyle(i % 2 ? 0xffffff : 0xff7a00, 1)
@@ -375,8 +394,24 @@ export class LevelScene extends Phaser.Scene {
         else g.gfx.fillRect(g.x + 6, g.y + (g.h / n) * i, g.w - 12, g.h / n)
       }
       g.gfx.lineStyle(4, 0x0a0c1c, 1).strokeRect(g.x + 3, g.y + 6, g.w - 6, g.h - 12)
+      // Red warning blinkers at the ends
+      g.gfx.fillStyle(0xef4444, 1).fillCircle(g.x + 8, g.y + g.h / 2, 4)
+      g.gfx.fillStyle(0xef4444, 1).fillCircle(g.x + g.w - 8, g.y + g.h / 2, 4)
     } else {
-      g.gfx.lineStyle(2, g.def.shortcut ? 0xff9bd0 : 0x9eecff, 0.5).strokeRect(g.x + 4, g.y + 4, g.w - 8, g.h - 8)
+      // ── OPEN GATE / SHORTCUT: Clear Open Way with Neon Markers ──
+      const color = g.def.shortcut ? 0xff9bd0 : 0x9eecff
+      g.gfx.lineStyle(1.5, color, 0.4).strokeRect(g.x + 4, g.y + 4, g.w - 8, g.h - 8)
+      // Open passageway corner brackets
+      const k = 8
+      g.gfx.lineStyle(2.5, color, 0.85)
+      g.gfx.lineBetween(g.x + 4, g.y + 4, g.x + 4 + k, g.y + 4)
+      g.gfx.lineBetween(g.x + 4, g.y + 4, g.x + 4, g.y + 4 + k)
+      g.gfx.lineBetween(g.x + g.w - 4, g.y + 4, g.x + g.w - 4 - k, g.y + 4)
+      g.gfx.lineBetween(g.x + g.w - 4, g.y + 4, g.x + g.w - 4, g.y + 4 + k)
+      g.gfx.lineBetween(g.x + 4, g.y + g.h - 4, g.x + 4 + k, g.y + g.h - 4)
+      g.gfx.lineBetween(g.x + 4, g.y + g.h - 4, g.x + 4, g.y + g.h - 4 - k)
+      g.gfx.lineBetween(g.x + g.w - 4, g.y + g.h - 4, g.x + g.w - 4 - k, g.y + g.h - 4)
+      g.gfx.lineBetween(g.x + g.w - 4, g.y + g.h - 4, g.x + g.w - 4, g.y + g.h - 4 - k)
     }
   }
 
@@ -438,7 +473,7 @@ export class LevelScene extends Phaser.Scene {
 
   private setupInput() {
     const kb = this.input.keyboard!
-    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,F,E,Q,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT') as Record<string, Phaser.Input.Keyboard.Key>
+    this.keys = kb.addKeys('W,A,S,D,UP,DOWN,LEFT,RIGHT,SPACE,F,E,Q,V,ONE,TWO,THREE,FOUR,FIVE,SIX,SEVEN,EIGHT') as Record<string, Phaser.Input.Keyboard.Key>
     // one keyboard drives both sides; on two computers it drives only this computer's side
     const local = keyPad(this.keys)
     this.runnerPad = this.view === 'barrier' ? this.remotePad : local
@@ -701,6 +736,19 @@ export class LevelScene extends Phaser.Scene {
     }
     if (k.tap('E')) this.shareLocation()
     if (k.tap('Q')) this.callExtraAlly()
+    if (k.tap('V')) {
+      if (this.view === 'runner') {
+        this.view = 'full'
+        this.cameras.main.stopFollow()
+        this.cameras.main.setZoom(1)
+        this.cameras.main.setViewport(0, 0, W, H)
+        this.cameras.main.setBounds(0, 0, W, H)
+        this.cameras.main.centerOn(W / 2, H / 2)
+      } else {
+        this.view = 'runner'
+        this.followPriya()
+      }
+    }
     this.progFrac = -1
     this.focusAt = null
 
@@ -1369,9 +1417,10 @@ export class LevelScene extends Phaser.Scene {
       if (rad > 0) l.add(lamp.x, lamp.y + 10, rad)
     }
     for (const z of this.world.data.zones) l.add((z[0] + z[2] / 2) * T, (z[1] + z[3] / 2) * T, Math.max(z[2], z[3]) * T * 0.75 + 30, 0.95)
-    const [gx, gy] = this.goalCenter()
-    l.add(gx, gy, 120, 0.9)
     l.add(this.px, this.py - 10, this.priyaRadius())
+    // Glowing phone casts forward light beam ahead of Priya in direction she faces
+    const forwardX = this.px + (this.priya.scaleX > 0 ? 30 : -30)
+    l.add(forwardX, this.py - 12, 38, 0.75)
     for (const a of this.activeFollowers()) l.add(a.crew.x, a.crew.y - 10, 70, 0.9)
     for (const n of this.npcs) if (!n.used && n.def.color) l.add(n.x, n.y, 44, 0.6)
     // on Priya's zoomed screen, whatever she can use right now is lit so she can see it

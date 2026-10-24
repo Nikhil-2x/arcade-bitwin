@@ -53,22 +53,20 @@ export class Hud {
 
   private scene: Phaser.Scene
   private opts: HudOptions
-  /** Priya's own screen on two computers: no Barrier energy, abilities or intel. */
-  private runnerOnly: boolean
 
   constructor(scene: Phaser.Scene, opts: HudOptions) {
     this.scene = scene
     this.opts = opts
-    this.runnerOnly = opts.view === 'runner'
     this.g = scene.add.graphics().setDepth(DEPTH)
     const d = DEPTH + 1
     const tagW = this.tag(20, opts.runnerTag)
     display(scene, 20 + tagW + 8, 8, opts.runnerLabel, 12, hex(COLORS.cyan)).setDepth(d)
-    if (!this.runnerOnly) {
-      const bTagW = this.tag(884, opts.barrierTag)
-      display(scene, 884 + bTagW + 8, 8, opts.barrierLabel, 12, hex(COLORS.purple)).setDepth(d)
-      display(scene, 884, 28, 'ENERGY', 10, hex(COLORS.muted)).setDepth(d)
-    }
+
+    // Barrier player/AI tag and Energy label (always visible)
+    const bTagW = this.tag(884, opts.barrierTag)
+    display(scene, 884 + bTagW + 8, 8, opts.barrierLabel, 12, hex(COLORS.purple)).setDepth(d)
+    display(scene, 884, 28, 'ENERGY', 10, hex(COLORS.muted)).setDepth(d)
+
     this.timer = display(scene, W / 2, 6, '0:00', 32).setOrigin(0.5, 0).setDepth(d)
     this.batteryText = display(scene, 196, 31, '', 14).setDepth(d)
     this.chips = display(scene, 20, 58, '', 10, hex(COLORS.muted)).setDepth(d)
@@ -78,7 +76,7 @@ export class Hud {
     this.alert = scene.add.graphics().setDepth(DEPTH - 1).setAlpha(0)
     this.alert.lineStyle(26, COLORS.red, 0.55).strokeRect(0, HUD_H, W, BAR_Y - HUD_H)
 
-    if (this.runnerOnly) return
+    // Barrier ability keycaps at the bottom (always visible)
     const n = opts.abilities.length
     const bw = Math.min(190, (W - 24) / n - 6)
     const startX = (W - n * (bw + 6) + 6) / 2
@@ -109,8 +107,8 @@ export class Hud {
     // console plates with a ruler tick along the inner edge
     g.fillStyle(COLORS.bg, 0.94).fillRect(0, 0, W, HUD_H)
     g.lineStyle(1, COLORS.panelEdge, 1).lineBetween(0, HUD_H, W, HUD_H)
-    // the bottom plate holds the Barrier's abilities; Priya's own screen uses the space for the map
-    if (!this.runnerOnly) g.fillStyle(COLORS.bg, 0.94).fillRect(0, BAR_Y, W, H - BAR_Y).lineBetween(0, BAR_Y, W, BAR_Y)
+    // the bottom plate holds the Barrier's abilities (always rendered)
+    g.fillStyle(COLORS.bg, 0.94).fillRect(0, BAR_Y, W, H - BAR_Y).lineBetween(0, BAR_Y, W, BAR_Y)
     g.lineStyle(1, COLORS.panelEdge, 0.8)
     for (let x = 0; x < W; x += 16) g.lineBetween(x, HUD_H, x, HUD_H + (x % 128 === 0 ? 6 : 3))
 
@@ -136,7 +134,7 @@ export class Hud {
     g.fillStyle(0xff8fd0, 1).fillTriangle(px - 6, ry + 13, px + 6, ry + 13, px, ry + 4)
 
     // barrier meters: segmented energy, continuous isolation with quarter marks
-    const eCells = this.runnerOnly ? 0 : 10
+    const eCells = 10
     const eLit = Math.floor((v.energy / BALANCE.barrierEnergyMax) * eCells)
     for (let i = 0; i < eCells; i++) g.fillStyle(i < eLit ? 0x4fc3ff : COLORS.panelEdge, i < eLit ? 1 : 0.5).fillRect(884 + i * 15, 42, 12, 14)
     const iso = Phaser.Math.Clamp(v.isolation / 100, 0, 1)
@@ -146,8 +144,8 @@ export class Hud {
     g.lineStyle(1, COLORS.bg, 1)
     for (let k = 1; k < 4; k++) g.lineBetween(1058 + 50 * k, 42, 1058 + 50 * k, 56)
 
-    // ability keycaps
-    if (!this.runnerOnly) this.opts.abilities.forEach((id, i) => {
+    // ability keycaps at the bottom (always updated)
+    this.opts.abilities.forEach((id, i) => {
       const { x, w } = this.slot[i]
       const def = ABILITIES[id]
       const st = v.abilityState(id)
@@ -196,7 +194,6 @@ export class Hud {
 
   /** What the Barrier can read about Priya's choices. */
   intel(msg: string, now: number) {
-    if (this.runnerOnly) return
     const t = text(this.scene, W - 14, HUD_H + 12, msg, 13, '#c9b8ff').setOrigin(1, 0).setDepth(DEPTH).setAlpha(0.95)
     this.feedLines.push({ t, born: now })
     if (this.feedLines.length > 5) this.feedLines.shift()?.t.destroy()

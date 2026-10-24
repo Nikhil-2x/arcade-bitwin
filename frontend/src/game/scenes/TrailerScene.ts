@@ -3,6 +3,7 @@ import { COLORS, FONT, H, W } from '../config/constants.ts'
 import { button, soundToggle } from '../ui/widgets.ts'
 import { Sfx } from '../utils/sfx.ts'
 import { TrailerAudio } from '../utils/TrailerAudio.ts'
+import { Crewmate } from '../entities/Crewmate.ts'
 
 /**
  * 2D Cinematic Animated Movie Trailer for Circle of Allies.
@@ -256,41 +257,31 @@ export class TrailerScene extends Phaser.Scene {
   }
 
   private createPriyaCharacter() {
-    // Stylized Priya (Among-Us style bean character with visor, backpack, phone)
-    const priya = this.add.container(720, H - 220).setDepth(20)
-
-    // Shadow
-    const shadow = this.add.ellipse(0, 40, 48, 16, 0x000000, 0.5)
-
-    // Legs
-    const legL = this.add.image(-12, 28, 'cm_leg_cyan').setScale(0.8)
-    const legR = this.add.image(12, 28, 'cm_leg_cyan').setScale(0.8)
-
-    // Body
-    const body = this.add.image(0, 0, 'cm_body_cyan').setScale(0.8)
-
-    // Glowing phone in hand
-    const phone = this.add.rectangle(24, 4, 12, 20, 0x38bdf8)
-    const phoneGlow = this.add.circle(24, 4, 20, 0x22d3ee, 0.35)
-
-    priya.add([shadow, legL, legR, body, phoneGlow, phone])
+    // Priya girl character from the game matching reference image
+    const priya = new Crewmate(this, 720, H - 190, 'pink', 1.8).setDepth(20).setFacing(-1)
     this.trailerContainer.add(priya)
+
+    let isMoving = false
+    let facingX = -1
+    this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => priya.animate(0.016, isMoving, isMoving ? facingX : 0),
+    })
 
     // Priya starts walking forward toward the left
     this.time.delayedCall(1200, () => {
-      // Walking bob tween
+      isMoving = true
+      facingX = -1
+
       this.tweens.add({
         targets: priya,
         x: 440,
         duration: 4000,
         ease: 'Linear',
-      })
-      this.tweens.add({
-        targets: body,
-        y: -4,
-        yoyo: true,
-        repeat: 12,
-        duration: 240,
+        onComplete: () => {
+          isMoving = false
+        },
       })
 
       // Footsteps sound
@@ -299,15 +290,6 @@ export class TrailerScene extends Phaser.Scene {
       // Phone lights up & notification arrives
       this.time.delayedCall(1500, () => {
         TrailerAudio.playPhoneChime()
-
-        // Phone pulse
-        this.tweens.add({
-          targets: phoneGlow,
-          scale: 1.8,
-          alpha: 0.8,
-          yoyo: true,
-          duration: 300,
-        })
 
         // Holographic text message popup from Meera
         const msgBox = this.add.container(440, H - 360).setAlpha(0).setDepth(30)
@@ -362,10 +344,13 @@ export class TrailerScene extends Phaser.Scene {
     this.trailerContainer.add(street)
 
     // Priya walking down the lane
-    const priya = this.add.container(380, H - 220)
-    const pBody = this.add.image(0, 0, 'cm_body_cyan').setScale(0.85)
-    priya.add(pBody)
+    const priya = new Crewmate(this, 380, H - 190, 'pink', 1.6).setDepth(10).setFacing(1)
     this.trailerContainer.add(priya)
+    this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => priya.animate(0.016, true, 1),
+    })
 
     // Overhead Streetlight that flickers and shuts off
     const pole = this.add.graphics()
@@ -479,10 +464,13 @@ export class TrailerScene extends Phaser.Scene {
     this.trailerContainer.add(road)
 
     // Priya standing at center-left with small cyan circle
-    const priya = this.add.container(360, H - 240)
-    const priyaBody = this.add.image(0, 0, 'cm_body_cyan').setScale(0.85)
-    priya.add(priyaBody)
-    const phoneLight = this.add.circle(0, 40, 60, 0x00e5ff, 0.15)
+    const phoneLight = this.add.circle(360, H - 170, 70, 0x00e5ff, 0.15)
+    const priya = new Crewmate(this, 360, H - 190, 'pink', 1.6).setDepth(10).setFacing(1)
+    this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => priya.animate(0.016, false, 0),
+    })
     this.trailerContainer.add([phoneLight, priya])
 
     // Mr. Salim's Tea Stall at right
@@ -498,7 +486,12 @@ export class TrailerScene extends Phaser.Scene {
     stallBody.fillStyle(0x94a3b8, 1)
     stallBody.fillRect(-20, -15, 30, 20)
 
-    const salim = this.add.image(0, -10, 'cm_body_yellow').setScale(0.7)
+    const salim = new Crewmate(this, 0, 10, 'orange', 1.3).setFacing(-1)
+    this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => salim.animate(0.016, false, 0),
+    })
     teaStall.add([stallBody, salim])
     this.trailerContainer.add(teaStall)
 
@@ -514,7 +507,7 @@ export class TrailerScene extends Phaser.Scene {
       // Luminous cyan-amber connection thread traces between Priya and Salim!
       const thread = this.add.graphics()
       thread.lineStyle(3, 0x00e5ff, 0.9)
-      const threadCurve = new Phaser.Curves.QuadraticBezier(new Phaser.Math.Vector2(360, H - 240), new Phaser.Math.Vector2(620, H - 300), new Phaser.Math.Vector2(880, H - 280))
+      const threadCurve = new Phaser.Curves.QuadraticBezier(new Phaser.Math.Vector2(360, H - 190), new Phaser.Math.Vector2(620, H - 270), new Phaser.Math.Vector2(880, H - 260))
       thread.strokePoints(threadCurve.getPoints(24))
       this.trailerContainer.add(thread)
 
@@ -591,7 +584,7 @@ export class TrailerScene extends Phaser.Scene {
     const montageBox = this.add.container(W / 2, H / 2)
     this.trailerContainer.add(montageBox)
 
-    const showStage = (title: string, sub: string, desc: string, tint: number, iconName: string) => {
+    const showStage = (title: string, sub: string, desc: string, tint: number, charType: 'priya' | 'green' | 'ghost') => {
       montageBox.removeAll(true)
 
       const card = this.add.graphics()
@@ -614,7 +607,20 @@ export class TrailerScene extends Phaser.Scene {
         color: '#9eecff',
       }).setOrigin(0.5)
 
-      const avatar = this.add.image(0, 15, iconName).setScale(1.2)
+      let avatar: Phaser.GameObjects.GameObject
+      if (charType === 'priya') {
+        const c = new Crewmate(this, 0, 30, 'pink', 1.7).setFacing(1)
+        c.animate(0.016, true, 1)
+        this.time.addEvent({ delay: 16, loop: true, callback: () => c.animate(0.016, true, 1) })
+        avatar = c
+      } else if (charType === 'green') {
+        const c = new Crewmate(this, 0, 30, 'green', 1.5).setFacing(1)
+        c.animate(0.016, true, 1)
+        this.time.addEvent({ delay: 16, loop: true, callback: () => c.animate(0.016, true, 1) })
+        avatar = c
+      } else {
+        avatar = this.add.image(0, 10, 'ghost').setScale(1.2)
+      }
 
       const descTxt = this.add.text(0, 105, desc, {
         fontFamily: FONT,
@@ -628,11 +634,11 @@ export class TrailerScene extends Phaser.Scene {
     }
 
     // Stage 1: Night 1 (0s)
-    showStage('NIGHT 1: THE LAST BUS', 'The Neighborhood Lane', 'Flickering streetlights, closed gates, and Salim’s tea stall.', 0xf59e0b, 'cm_body_cyan')
+    showStage('NIGHT 1: THE LAST BUS', 'The Neighborhood Lane', 'Flickering streetlights, closed gates, and Salim’s tea stall.', 0xf59e0b, 'priya')
 
     // Stage 2: Night 2 (2.8s)
     this.time.delayedCall(2800, () => {
-      showStage('NIGHT 2: MARKET NIGHT', 'Festival Bazaar & Transit', 'A bustling crowd where nobody is looking. Learn to verify, not just trust.', 0x06b6d4, 'cm_body_green')
+      showStage('NIGHT 2: MARKET NIGHT', 'Festival Bazaar & Transit', 'A bustling crowd where nobody is looking. Learn to verify, not just trust.', 0x06b6d4, 'green')
     })
 
     // Stage 3: Night 3 (5.6s)
@@ -663,15 +669,20 @@ export class TrailerScene extends Phaser.Scene {
     // Left: The Runner (Priya)
     const runnerBox = this.add.container(W / 4, H / 2)
     const rGlow = this.add.circle(0, 0, 160, 0x00e5ff, 0.12)
-    const rPriya = this.add.image(0, -30, 'cm_body_cyan').setScale(1.2)
-    const rTitle = this.add.text(0, 60, 'THE RUNNER: PRIYA', {
+    const rPriya = new Crewmate(this, 0, 5, 'pink', 1.8).setFacing(1)
+    this.time.addEvent({
+      delay: 16,
+      loop: true,
+      callback: () => rPriya.animate(0.016, true, 1),
+    })
+    const rTitle = this.add.text(0, 65, 'THE RUNNER: PRIYA', {
       fontFamily: FONT,
       fontSize: '22px',
       color: '#9eecff',
       stroke: '#05060f',
       strokeThickness: 5,
     }).setOrigin(0.5)
-    const rDesc = this.add.text(0, 95, 'Reports broken lights • Calls trusted allies • Verifies routes', {
+    const rDesc = this.add.text(0, 100, 'Reports broken lights • Calls trusted allies • Verifies routes', {
       fontFamily: FONT,
       fontSize: '13px',
       color: '#cbd5e1',
@@ -699,7 +710,7 @@ export class TrailerScene extends Phaser.Scene {
     this.trailerContainer.add([runnerBox, barrierBox])
 
     // Floating animation
-    this.tweens.add({ targets: rPriya, y: -38, yoyo: true, repeat: -1, duration: 800 })
+    this.tweens.add({ targets: rPriya, y: -5, yoyo: true, repeat: -1, duration: 800 })
     this.tweens.add({ targets: bGhost, y: -22, yoyo: true, repeat: -1, duration: 1100 })
 
     // Big central caption
