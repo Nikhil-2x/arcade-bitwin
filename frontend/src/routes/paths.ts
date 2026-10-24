@@ -3,19 +3,22 @@ import type { SceneKey } from '../game/sceneBridge.ts'
 import { GameState } from '../game/state/GameState.ts'
 import type { LevelId } from '../game/types.ts'
 
+/** The game lives under its own slug; the site root is the arcade hub. */
+const BASE = '/circle-of-allies'
+
 export const PATHS = {
-  intro: '/',
-  menu: '/menu',
-  room: '/room',
-  levels: '/levels',
-  play: '/play/:levelId',
-  ending: '/ending',
-  results: '/results',
+  intro: BASE,
+  menu: `${BASE}/menu`,
+  room: `${BASE}/room`,
+  levels: `${BASE}/levels`,
+  play: `${BASE}/play/:levelId`,
+  ending: `${BASE}/ending`,
+  results: `${BASE}/results`,
 } as const
 
-export const playPath = (level: LevelId) => `/play/${level}`
+export const playPath = (level: LevelId) => `${BASE}/play/${level}`
 
-/** One play of a level, from the prologue to its result screen, lives under /play/:levelId. */
+/** One play of a level, from the prologue to its result screen, lives under .../play/:levelId. */
 export const PLAY_SCENES: readonly SceneKey[] = ['Prologue', 'Brief', 'Level', 'RoundEnd', 'LevelResult']
 
 export function parseLevelId(param: string | undefined): LevelId | null {

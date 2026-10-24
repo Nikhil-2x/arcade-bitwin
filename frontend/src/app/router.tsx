@@ -15,6 +15,7 @@ import LawGameRoute from '../pages/LawGameRoute.tsx'
 export const router = createBrowserRouter([
   // Standalone pages: outside GameLayout so the Phaser game is not created for them.
   { path: LAW_PATHS.arcade, element: <ArcadeHubPage /> },
+  { path: '/arcade', element: <Navigate to={LAW_PATHS.arcade} replace /> },
   { path: LAW_PATHS.law, element: <LawGameRoute /> },
   {
     path: PATHS.intro,
@@ -30,4 +31,5 @@ export const router = createBrowserRouter([
       { path: '*', element: <Navigate to={PATHS.intro} replace /> },
     ],
   },
+  { path: '*', element: <Navigate to={LAW_PATHS.arcade} replace /> },
 ])

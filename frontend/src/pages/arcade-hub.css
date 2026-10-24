@@ -1,0 +1,207 @@
+/* Arcade hub (site root). Every class is prefixed hub- so it cannot clash with either game. */
+.hub {
+  --hub-ink: #070914;
+  --hub-amber: #ffb547;
+  --hub-cyan: #9eecff;
+  --hub-pink: #ff5fa2;
+  --hub-paper: #eef1ff;
+  --hub-dim: #9aa2c8;
+  position: fixed;
+  inset: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(20px, 4vh, 44px);
+  padding: clamp(20px, 5vh, 64px) 16px 32px;
+  background: var(--hub-ink);
+  color: var(--hub-paper);
+  font-family: 'Varela Round', system-ui, sans-serif;
+}
+.hub *, .hub *::before, .hub *::after { box-sizing: border-box; }
+
+/* ---------- Synthwave sky ---------- */
+.hub-sky { position: fixed; inset: 0; overflow: hidden; pointer-events: none; background: linear-gradient(#070914 0%, #12102e 45%, #2a1240 62%, #070914 100%); }
+.hub-stars {
+  position: absolute; inset: 0 0 40% 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 32% 8%, #cfe 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 54% 30%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 71% 14%, #ffd 50%, transparent 51%),
+    radial-gradient(1px 1px at 86% 34%, #fff 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 22% 44%, #dff 50%, transparent 51%),
+    radial-gradient(1px 1px at 92% 6%, #fff 50%, transparent 51%),
+    radial-gradient(1px 1px at 44% 52%, #fff 50%, transparent 51%);
+  animation: hub-twinkle 4s ease-in-out infinite alternate;
+}
+@keyframes hub-twinkle { from { opacity: 0.5; } to { opacity: 1; } }
+.hub-sun {
+  position: absolute; left: 50%; top: 58%; width: min(46vw, 420px); aspect-ratio: 1; transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: linear-gradient(#ffd27a 0%, #ff8a5b 45%, #ff5fa2 100%);
+  mask-image: linear-gradient(#000 0 50%, transparent 50%), repeating-linear-gradient(to bottom, #000 0 10px, transparent 10px 15px);
+  mask-composite: add;
+  opacity: 0.55;
+  filter: blur(0.3px) drop-shadow(0 0 60px rgba(255, 95, 162, 0.5));
+}
+.hub-grid {
+  position: absolute; left: -50%; right: -50%; bottom: 0; height: 42%;
+  background:
+    linear-gradient(to bottom, var(--hub-ink), transparent 30%),
+    repeating-linear-gradient(to right, rgba(255, 95, 162, 0.55) 0 2px, transparent 2px 70px),
+    repeating-linear-gradient(to bottom, rgba(255, 95, 162, 0.55) 0 2px, transparent 2px 70px);
+  transform: perspective(380px) rotateX(62deg);
+  transform-origin: top;
+  animation: hub-roll 3s linear infinite;
+}
+@keyframes hub-roll { to { background-position: 0 0, 0 70px, 0 70px; } }
+.hub-scan {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1;
+  background:
+    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+/* ---------- Hero ---------- */
+.hub-hero { flex-shrink: 0; position: relative; z-index: 2; text-align: center; max-width: 900px; }
+.hub-kicker { color: var(--hub-cyan); letter-spacing: 0.32em; text-transform: uppercase; font-size: 0.78rem; animation: hub-blink 2.4s steps(1) infinite; }
+@keyframes hub-blink { 0%, 80% { opacity: 1; } 90% { opacity: 0.25; } }
+.hub-title {
+  position: relative;
+  margin: 10px 0 8px;
+  font-family: 'Bungee', sans-serif;
+  font-weight: 400;
+  font-size: clamp(2.4rem, min(9vw, 11vh), 6.4rem);
+  line-height: 0.95;
+  color: #fff4dc;
+  text-shadow: 0 0 6px #fff, 0 0 18px var(--hub-amber), 0 0 42px var(--hub-pink), 0 6px 0 #6b2a52;
+  animation: hub-neon 5s ease-in-out infinite, hub-drop 900ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+/* A chromatic ghost that slips out of register now and then. */
+.hub-title::after {
+  content: attr(data-text);
+  position: absolute; inset: 0;
+  color: transparent;
+  text-shadow: -3px 0 rgba(158, 236, 255, 0.7), 3px 0 rgba(255, 95, 162, 0.7);
+  opacity: 0;
+  animation: hub-glitch 6s steps(1) infinite;
+}
+@keyframes hub-neon { 0%, 100% { filter: brightness(1); } 47% { filter: brightness(1); } 48% { filter: brightness(0.6); } 49% { filter: brightness(1.1); } }
+@keyframes hub-glitch { 0%, 91%, 100% { opacity: 0; transform: none; } 92% { opacity: 1; transform: translate(2px, -1px); } 94% { opacity: 1; transform: translate(-2px, 1px); } 96% { opacity: 0; } }
+@keyframes hub-drop { from { opacity: 0; transform: translateY(-30px) scale(1.06); } to { opacity: 1; transform: none; } }
+.hub-sub { margin: 0; color: #d3d8f5; font-size: clamp(1rem, 1.8vw, 1.2rem); animation: hub-rise 700ms 250ms both; }
+
+/* ---------- Cabinets, side by side ---------- */
+.hub-row {
+  position: relative; z-index: 2;
+  display: flex;
+  gap: clamp(14px, 2.2vw, 28px);
+  width: 100%;
+  max-width: 1180px;
+  justify-content: center;
+  align-items: stretch;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  flex-shrink: 0;
+  padding: 14px 4px 18px;
+  scrollbar-width: thin;
+}
+.hub-card {
+  --tone: var(--hub-amber);
+  flex: 1 1 0;
+  min-width: 260px;
+  max-width: 370px;
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  border-radius: 22px;
+  padding: 14px;
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(170deg, rgba(30, 34, 70, 0.92), rgba(12, 14, 32, 0.95));
+  border: 1.5px solid rgba(238, 241, 255, 0.12);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  transition: transform 260ms cubic-bezier(0.2, 0.8, 0.2, 1), border-color 260ms, box-shadow 260ms;
+  animation: hub-rise 700ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+.hub-card.allies { --tone: var(--hub-cyan); }
+.hub-card.crime { --tone: var(--hub-amber); }
+.hub-card.soon { --tone: #7a82b8; }
+a.hub-card:hover, a.hub-card:focus-visible {
+  transform: translateY(-10px) rotateX(4deg);
+  border-color: var(--tone);
+  box-shadow: 0 0 0 1px var(--tone), 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 50px color-mix(in srgb, var(--tone) 35%, transparent);
+  outline: none;
+}
+@keyframes hub-rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+
+.hub-art {
+  position: relative;
+  flex-shrink: 0;
+  height: clamp(110px, 20vh, 180px);
+  border-radius: 14px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 60%, color-mix(in srgb, var(--tone) 22%, #0b0d1e), #080a18 75%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), inset 0 -30px 40px rgba(0, 0, 0, 0.35);
+}
+.hub-art::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 0 1px, transparent 1px 3px); pointer-events: none; }
+.hub-art-svg { width: 92%; height: 92%; }
+.hub-meta { display: flex; flex-direction: column; gap: 6px; padding: 14px 6px 6px; flex: 1; }
+.hub-tag { align-self: flex-start; font-size: 0.68rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--tone); border: 1px solid color-mix(in srgb, var(--tone) 50%, transparent); border-radius: 999px; padding: 2px 10px; }
+.hub-meta h2 { margin: 4px 0 0; font-family: 'Bungee', sans-serif; font-weight: 400; font-size: 1.3rem; line-height: 1.15; }
+.hub-meta p { margin: 0; color: var(--hub-dim); line-height: 1.5; font-size: 0.92rem; flex: 1; }
+.hub-players { font-size: 0.78rem; color: #c3c9ea; }
+.hub-play {
+  margin-top: 12px;
+  text-align: center;
+  padding: 12px;
+  border-radius: 12px;
+  font-family: 'Bungee', sans-serif;
+  letter-spacing: 0.08em;
+  background: var(--tone);
+  color: #10121f;
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--tone) 55%, #000);
+  transition: transform 140ms, box-shadow 140ms;
+}
+a.hub-card:hover .hub-play { animation: hub-press 1s ease-in-out infinite; }
+@keyframes hub-press { 50% { transform: translateY(3px); box-shadow: 0 2px 0 color-mix(in srgb, var(--tone) 55%, #000); } }
+
+/* The locked cabinet: dimmed, with a static of its own. */
+.hub-card.soon { cursor: not-allowed; border-style: dashed; }
+.hub-card.soon .hub-art, .hub-card.soon .hub-meta { filter: grayscale(0.7); opacity: 0.75; }
+.hub-card.soon .hub-play { background: transparent; color: var(--hub-dim); box-shadow: inset 0 0 0 1.5px rgba(238, 241, 255, 0.2); }
+.hub-card.soon .hub-art::before {
+  content: ''; position: absolute; inset: 0; opacity: 0.18;
+  background-image: repeating-radial-gradient(circle at 30% 40%, #fff 0 0.6px, transparent 0.6px 3px);
+  animation: hub-static 0.4s steps(3) infinite;
+}
+@keyframes hub-static { 33% { transform: translate(-4%, 3%); } 66% { transform: translate(3%, -2%); } }
+
+/* ---------- Art motion ---------- */
+.hub-spin { transform-origin: 100px 72px; animation: hub-dash 12s linear infinite; }
+@keyframes hub-dash { to { stroke-dashoffset: -200; } }
+.hub-breathe { animation: hub-breathe 3s ease-in-out infinite alternate; transform-origin: 100px 72px; }
+@keyframes hub-breathe { to { opacity: 0.6; transform: scale(1.06); } }
+.hub-ally { animation: hub-bob 2s ease-in-out infinite alternate; }
+@keyframes hub-bob { to { transform: translateY(-3px); } }
+.hub-magnify { animation: hub-sweep 4s ease-in-out infinite; transform-origin: 160px 80px; }
+@keyframes hub-sweep { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(-16px, 10px); } 66% { transform: translate(6px, 16px); } }
+.hub-scale-l { animation: hub-tip 3s ease-in-out infinite; }
+.hub-scale-r { animation: hub-tip 3s ease-in-out infinite reverse; }
+@keyframes hub-tip { 50% { transform: translateY(5px); } }
+.hub-flicker { animation: hub-flick 3s steps(1) infinite; }
+@keyframes hub-flick { 0%, 70%, 100% { opacity: 1; } 72% { opacity: 0.2; } 74% { opacity: 0.9; } 76% { opacity: 0.3; } }
+
+/* Narrow screens: the row stays horizontal and scrolls, one cabinet at a time. */
+@media (max-width: 860px) {
+  .hub-row { justify-content: flex-start; padding-inline: 8vw; scrollbar-width: none; }
+  .hub-row::-webkit-scrollbar { display: none; }
+  .hub-card { flex: 0 0 78vw; max-width: 340px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hub *, .hub *::before, .hub *::after { animation: none !important; transition-duration: 0.01ms !important; }
+}
