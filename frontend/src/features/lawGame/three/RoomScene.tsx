@@ -6,6 +6,7 @@ import { EYE_HEIGHT, RUN_SPEED, WALK_SPEED } from '../config.ts'
 import type { Evidence, SceneId } from '../types.ts'
 import { ENVIRONMENTS, loadEnvironment, type SpawnPoint } from './environments.ts'
 import { EvidenceProp } from './EvidenceProp.tsx'
+import type { Speech } from '../ui/useSpeech.ts'
 import { RoomQueries } from './RoomQueries.ts'
 
 export type Vec3 = [number, number, number]
@@ -16,6 +17,8 @@ export interface RoomSceneProps {
   scene: SceneId
   /** The player walked up to a boundary that has a legal reason behind it. */
   onEdge?: () => void
+  /** Someone in the scene said something the player should read. */
+  onSpeech?: (speech: Speech) => void
   evidences: Evidence[]
   /** Hide: where each item starts (null = on the desk). Search: where the obstructor left them. */
   placed?: Record<string, Vec3>
@@ -84,6 +87,7 @@ function Rig({ q, spawn, paused, onLockChange }: { q: RoomQueries; spawn: SpawnP
 
   useFrame((_, dt) => {
     const k = keys.current
+    let walked = 0
     if (!paused) {
       const f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
       const r = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)
@@ -95,10 +99,14 @@ function Rig({ q, spawn, paused, onLockChange }: { q: RoomQueries; spawn: SpawnP
         // yaw 0 faces -z; forward = (-sin, -cos), right = (cos, -sin)
         const dx = ((-sin * f + cos * r) / len) * speed
         const dz = ((-cos * f - sin * r) / len) * speed
+        const fromX = pos.x
+        const fromZ = pos.z
         q.move(pos, dx, dz)
+        walked = Math.hypot(pos.x - fromX, pos.z - fromZ)
       }
     }
     camera.position.copy(pos)
+    camera.position.setY(pos.y + q.floorAt(pos.x, pos.z) + q.headBob(walked))
     camera.rotation.set(pitch.current, yaw.current, 0, 'YXZ')
   })
   return null
@@ -171,7 +179,7 @@ function Interaction(props: RoomSceneProps & {
       }
     }
     focus.current = id
-    if (!id) say(null)
+    if (!id) say(q.contextPrompt())
     else say(mode === 'hide' ? `E  Pick up ${names.get(id)}` : 'E  Collect evidence')
   })
 
@@ -187,15 +195,19 @@ function Interaction(props: RoomSceneProps & {
           setCarried(null)
         } else if (focus.current) {
           setCarried(focus.current)
+        } else {
+          q.contextAct()
         }
       } else if (focus.current) {
         props.onCollect?.(focus.current)
         focus.current = null
+      } else {
+        q.contextAct()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [mode, paused, carried, positions, setPositions, setCarried, restPoint, props])
+  }, [mode, paused, carried, positions, setPositions, setCarried, restPoint, props, q])
 
   return null
 }
@@ -256,7 +268,7 @@ function World({ props }: { props: RoomSceneProps }) {
       <group ref={setRoot} scale={env.scale}>
         <env.Scenery />
       </group>
-      {q && env.Ambience && <env.Ambience q={q} />}
+      {q && env.Ambience && <env.Ambience q={q} onSpeech={props.onSpeech} />}
       {q && positions && (
         <>
           <Rig q={q} spawn={env.spawn(q)} paused={props.paused} onLockChange={props.onLockChange} />

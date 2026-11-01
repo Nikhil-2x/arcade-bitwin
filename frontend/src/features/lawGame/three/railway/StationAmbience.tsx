@@ -15,6 +15,10 @@ import {
   WEST,
   type RailwayQueries,
 } from './RailwayQueries.ts'
+import type { Speech } from '../../ui/useSpeech.ts'
+import { CoachGlass } from './CoachInterior.tsx'
+import { Crowd } from './Crowd.tsx'
+import { StationSounds } from './StationSounds.tsx'
 import { coachTexture, departureBoardTexture, glowTexture, skyTexture, tapeTexture } from './textures.ts'
 
 const WARM = '#ffcf8a'
@@ -370,9 +374,12 @@ function PassingTrain({ q }: { q: RailwayQueries }) {
   )
 }
 
-export function StationAmbience({ q }: { q: RoomQueries }) {
+export function StationAmbience({ q, onSpeech }: { q: RoomQueries; onSpeech?: (speech: Speech) => void }) {
   return (
     <>
+      <Crowd q={q as RailwayQueries} onSpeech={onSpeech} />
+      <CoachGlass />
+      <StationSounds q={q as RailwayQueries} onSpeech={onSpeech} />
       <Sky />
       <Lamps />
       <CanopyLights />

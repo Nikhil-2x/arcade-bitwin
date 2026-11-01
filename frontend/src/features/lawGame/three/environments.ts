@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react'
 import { REACH } from '../config.ts'
 import type { SceneId } from '../types.ts'
+import type { Speech } from '../ui/useSpeech.ts'
 import type { RoomQueries } from './RoomQueries.ts'
 
 export interface SpawnPoint {
@@ -15,7 +16,7 @@ export interface LoadedEnvironment {
   Scenery: ComponentType
   Lights: ComponentType
   /** Effects the game logic never touches. */
-  Ambience?: ComponentType<{ q: RoomQueries }>
+  Ambience?: ComponentType<{ q: RoomQueries; onSpeech?: (speech: Speech) => void }>
   scale: number
   createQueries: (root: import('three').Object3D) => RoomQueries
   spawn: (q: RoomQueries) => SpawnPoint

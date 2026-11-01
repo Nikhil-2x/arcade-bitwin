@@ -81,6 +81,31 @@ export class RoomQueries {
     }
   }
 
+  /** Height of the floor above y = 0 at this spot. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  floorAt(_x: number, _z: number): number {
+    return 0
+  }
+
+  /** Called with how far the player walked this frame. Returns the head's offset from its resting height. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  headBob(_walked: number): number {
+    return 0
+  }
+
+  /** What pressing E would do when no evidence is in the crosshair. */
+  contextPrompt(): string | null {
+    return null
+  }
+
+  contextAct() {}
+
+  /** True where the player is threading a gap too fine for the collision rays, like a train door. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected ignoresSolids(_pos: THREE.Vector3): boolean {
+    return false
+  }
+
   setEdgeListener(listener: (() => void) | null) {
     this.onEdge = listener
   }
@@ -118,13 +143,14 @@ export class RoomQueries {
     const side = new THREE.Vector3()
     const free = (sx: number, sz: number) => {
       if (sx === 0 && sz === 0) return true
+      if (this.ignoresSolids(pos)) return true
       dir.set(sx, 0, sz).normalize()
       side.set(-dir.z, 0, dir.x)
       const reach = PLAYER_RADIUS + Math.hypot(sx, sz)
       // Several heights and a little to each side, so a desk with a gap under it still stops you.
       for (const h of PROBE_HEIGHTS) {
         for (const o of PROBE_SIDES) {
-          probe.set(pos.x + side.x * o, h, pos.z + side.z * o)
+          probe.set(pos.x + side.x * o, h + this.floorAt(pos.x, pos.z), pos.z + side.z * o)
           if (this.blocked(probe, dir, reach)) return false
         }
       }

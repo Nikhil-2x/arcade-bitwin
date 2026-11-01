@@ -13,6 +13,9 @@ export function StationLights() {
       <pointLight position={[11.1, 5, 10.9]} intensity={38} distance={26} color="#ffd9a0" />
       <pointLight position={[-3, 3.3, 5.6]} intensity={22} distance={18} color="#fff3d6" />
       <pointLight position={[11, 3.3, 5.6]} intensity={22} distance={18} color="#fff3d6" />
+      {/* The boarding coaches, lit from within: it is what makes the windows glow from outside. */}
+      <pointLight position={[-14, 2.3, 3.2]} intensity={7} distance={11} color="#fff0d0" />
+      <pointLight position={[-5, 2.3, 3.2]} intensity={7} distance={11} color="#fff0d0" />
     </>
   )
 }

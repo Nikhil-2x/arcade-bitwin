@@ -1,5 +1,6 @@
 import type { ThreeElements } from '@react-three/fiber'
 import { CART_TOP_MATERIAL, GROUND_MATERIAL, PLATFORM_TOP } from './RailwayQueries.ts'
+import { CoachInterior } from './CoachInterior.tsx'
 import { RailwayStation } from './RailwayStation.tsx'
 import { gravelTexture, stationSignTexture } from './textures.ts'
 
@@ -168,6 +169,7 @@ export function StationScenery() {
         <planeGeometry args={[420, 180]} />
         <meshStandardMaterial name={GROUND_MATERIAL} map={gravelTexture()} roughness={1} />
       </mesh>
+      <CoachInterior />
       <ParcelCart position={[-19, 0, 10.4]} />
       <CrateStack position={[-24.5, 0, 11.3]} rotation={[0, 0.35, 0]} />
       <OilDrums position={[-0.8, 0, 9.9]} />

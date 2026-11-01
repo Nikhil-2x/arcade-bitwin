@@ -55,6 +55,11 @@ export const CASE_2: LawCase = {
     loading: 'Pulling into the station',
     alibiQuestion: 'Where were you between 8:10 and 8:47 PM? Name a place, a time and someone who saw you.',
     alibiPlaceholder: 'I was at the…',
+    sceneTip: 'The train is open: climb aboard at a lit door. Talk to anyone you meet.',
+    extraControls: [
+      ['E', 'talk'],
+      ['M', 'mute'],
+    ],
   },
   edgeLaw: TRESPASS,
   witnessWords: ['porter', 'passenger', 'station master', 'stationmaster', 'examiner', 'tte', 'rpf', 'vendor', 'customer', 'clerk'],

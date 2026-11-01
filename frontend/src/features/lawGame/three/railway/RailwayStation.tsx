@@ -10,6 +10,7 @@ import type { ThreeElements } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import type * as THREE from 'three'
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { openTheTrain } from './openTheTrain.ts'
 
 const MODEL_URL = '/models/railway_station-transformed.glb'
 /** The Draco decoder is served from this site rather than a CDN. */
@@ -25,6 +26,7 @@ type GLTFResult = GLTF & {
 
 export function RailwayStation(props: ThreeElements['group']) {
   const { nodes } = useGLTF(MODEL_URL, DRACO_PATH) as unknown as GLTFResult
+  openTheTrain([nodes.Station, nodes.Station_1, nodes.Station_2])
   // The model has no normals, to save space. The loader flat-shades each mesh's own material to
   // make up for that, so use it rather than the shared `materials` entries gltfjsx suggests.
   return (

@@ -9,6 +9,8 @@ import { LawNote } from '../ui/LawNote.tsx'
 import { SceneLoader } from '../ui/SceneLoader.tsx'
 import { EdgeNote } from '../ui/EdgeNote.tsx'
 import { useEdgeNote } from '../ui/useEdgeNote.ts'
+import { SpeechBubble } from '../ui/SpeechBubble.tsx'
+import { useSpeech } from '../ui/useSpeech.ts'
 import { clock, useCountdown } from '../ui/useCountdown.ts'
 
 const MOVED_EPS = 0.02
@@ -30,6 +32,7 @@ export function HideScreen() {
   const finished = useRef(false)
   const used = useRef(0)
   const edge = useEdgeNote()
+  const speech = useSpeech()
 
   const finish = useCallback(() => {
     const q = queries.current
@@ -94,6 +97,7 @@ export function HideScreen() {
           mode="hide"
           scene={theCase.scene}
           onEdge={edge.trigger}
+          onSpeech={speech.say}
           evidences={theCase.evidences}
           paused={false}
           onItems={onItems}
@@ -137,11 +141,18 @@ export function HideScreen() {
           </div>
         )}
         {!showLaw && edge.show && <EdgeNote law={theCase.edgeLaw} />}
+        {speech.current && <SpeechBubble speech={speech.current} />}
         <div className="lg-help">
           <kbd>W</kbd>
           <kbd>A</kbd>
           <kbd>S</kbd>
-          <kbd>D</kbd> move &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>E</kbd> pick up / place &nbsp; <kbd>Esc</kbd> free the mouse
+          <kbd>D</kbd> move &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>E</kbd> pick up / place &nbsp;{' '}
+          {theCase.copy.extraControls?.map(([key, action]) => (
+            <span key={key}>
+              <kbd>{key}</kbd> {action} &nbsp;{' '}
+            </span>
+          ))}
+          <kbd>Esc</kbd> free the mouse
         </div>
         <button className="lg-btn lg-done" onClick={finish} disabled={!ready}>
           Done hiding <span className="lg-dim">(Enter)</span>
@@ -152,6 +163,7 @@ export function HideScreen() {
             <p className="lg-dim">
               Hide all {theCase.evidences.length} items before time runs out. Relevant or not, you decide what stays in sight.
             </p>
+            {theCase.copy.sceneTip && <p className="lg-dim">{theCase.copy.sceneTip}</p>}
           </div>
         )}
       </div>

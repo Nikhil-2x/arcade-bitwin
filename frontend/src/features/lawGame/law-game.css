@@ -134,6 +134,14 @@ button.lg-card:hover { transform: translateY(-5px); border-color: var(--lg-amber
 .lg-bar-track i { display: block; height: 100%; background: var(--lg-amber); transition: width 200ms; }
 .lg-toast { position: absolute; left: 50%; bottom: 80px; transform: translateX(-50%); animation: lg-rise 400ms both; z-index: 3; }
 
+.lg-speech { position: absolute; left: 14px; right: 14px; bottom: 74px; margin-inline: auto; max-width: 620px; display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; padding: 11px 16px; background: rgba(9, 11, 20, 0.88); border: 1px solid var(--lg-line); border-left: 3px solid var(--lg-teal); border-radius: 0 12px 12px 0; backdrop-filter: blur(6px); pointer-events: none; animation: lg-rise 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both; z-index: 4; }
+.lg-speech svg { width: 46px; height: 54px; border-radius: 8px; background: #232a52; }
+.lg-speech b { display: block; color: var(--lg-teal); font-size: 0.82rem; }
+.lg-speech q { display: block; margin-top: 3px; font-size: 0.95rem; line-height: 1.42; quotes: '\201C' '\201D'; }
+.lg-speech .lg-speech-law { display: block; margin-top: 4px; color: var(--lg-amber); font-size: 0.76rem; }
+.lg-speech.announce { border-left-color: var(--lg-amber); grid-template-columns: 1fr; }
+.lg-speech.announce b { color: var(--lg-amber); }
+
 /* ---------- Statement ---------- */
 .lg-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 22px; padding: 12px 32px 8px; max-width: 1200px; margin: 0 auto; width: 100%; flex: 1; min-height: 0; }
 .lg-stack { display: flex; flex-direction: column; gap: 12px; overflow: auto; padding-right: 4px; }

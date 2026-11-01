@@ -65,6 +65,10 @@ export interface CaseCopy {
   loading: string
   alibiQuestion: string
   alibiPlaceholder: string
+  /** Extra line on the "click to enter" screens, when a world has something to point out. */
+  sceneTip?: string
+  /** World-specific controls for the help line, shown after the shared ones. */
+  extraControls?: ReadonlyArray<readonly [key: string, action: string]>
 }
 
 export interface LawCase {
