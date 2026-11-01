@@ -7,6 +7,8 @@ import type { RoomQueries } from '../three/RoomQueries.ts'
 import type { Placement } from '../types.ts'
 import { LawNote } from '../ui/LawNote.tsx'
 import { SceneLoader } from '../ui/SceneLoader.tsx'
+import { EdgeNote } from '../ui/EdgeNote.tsx'
+import { useEdgeNote } from '../ui/useEdgeNote.ts'
 import { clock, useCountdown } from '../ui/useCountdown.ts'
 
 const MOVED_EPS = 0.02
@@ -27,6 +29,7 @@ export function HideScreen() {
   const [ready, setReady] = useState(false)
   const finished = useRef(false)
   const used = useRef(0)
+  const edge = useEdgeNote()
 
   const finish = useCallback(() => {
     const q = queries.current
@@ -89,6 +92,8 @@ export function HideScreen() {
       <div className="lg-canvas">
         <RoomScene
           mode="hide"
+          scene={theCase.scene}
+          onEdge={edge.trigger}
           evidences={theCase.evidences}
           paused={false}
           onItems={onItems}
@@ -131,6 +136,7 @@ export function HideScreen() {
             />
           </div>
         )}
+        {!showLaw && edge.show && <EdgeNote law={theCase.edgeLaw} />}
         <div className="lg-help">
           <kbd>W</kbd>
           <kbd>A</kbd>

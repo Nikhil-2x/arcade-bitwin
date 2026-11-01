@@ -3,7 +3,7 @@ import { useLawGame } from '../store/useLawGame.ts'
 
 /** A blank screen between turns, so the player who is not up never sees the other's work. */
 export function Handoff() {
-  const { phase, round, criminal, detective, confirmHandoff } = useLawGame()
+  const { phase, round, criminal, detective, confirmHandoff, theCase } = useLawGame()
   const hiding = phase === 'handoff-hide'
   const c = PLAYER_NAMES[criminal()]
   const d = PLAYER_NAMES[detective()]
@@ -29,7 +29,7 @@ export function Handoff() {
           <>
             <h1>{c}, look away</h1>
             <p>
-              The room is set. <b>{d}</b> is the <span className="lg-badge teal">Detective</span> now: find every piece of evidence, sort it, and name the culprit.
+              The {theCase.copy.sceneNoun} is set. <b>{d}</b> is the <span className="lg-badge teal">Detective</span> now: find every piece of evidence, sort it, and name the culprit.
             </p>
             <button className="lg-btn" onClick={confirmHandoff} style={{ marginTop: 20 }}>
               {d}: enter the scene

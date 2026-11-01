@@ -4,6 +4,8 @@ import { useLawGame } from '../store/useLawGame.ts'
 import { RoomScene, type Vec3 } from '../three/RoomScene.tsx'
 import { LawNote } from '../ui/LawNote.tsx'
 import { SceneLoader } from '../ui/SceneLoader.tsx'
+import { EdgeNote } from '../ui/EdgeNote.tsx'
+import { useEdgeNote } from '../ui/useEdgeNote.ts'
 import { clock, useCountdown } from '../ui/useCountdown.ts'
 
 /** The detective walks the same classroom and collects whatever was left behind. */
@@ -18,6 +20,7 @@ export function SearchScreen() {
   const finished = useRef(false)
   const used = useRef(0)
   const collectedRef = useRef<string[]>([])
+  const edge = useEdgeNote()
 
   const placed = useMemo(() => {
     const m: Record<string, Vec3> = {}
@@ -65,6 +68,8 @@ export function SearchScreen() {
       <div className="lg-canvas">
         <RoomScene
           mode="search"
+          scene={theCase.scene}
+          onEdge={edge.trigger}
           evidences={theCase.evidences}
           placed={placed}
           collected={collected}
@@ -107,6 +112,7 @@ export function SearchScreen() {
             />
           </div>
         )}
+        {!showLaw && edge.show && <EdgeNote law={theCase.edgeLaw} />}
         <div className="lg-help">
           <kbd>W</kbd>
           <kbd>A</kbd>
@@ -120,7 +126,7 @@ export function SearchScreen() {
           <div className="lg-lock" onClick={() => document.querySelector<HTMLCanvasElement>('.lg-canvas canvas')?.requestPointerLock()}>
             <h2>Click to enter the scene</h2>
             <p className="lg-dim">
-              {total} items were left in the room. Some matter, some do not. Find them all, then you will sort them.
+              {total} items were left in the {theCase.copy.sceneNoun}. Some matter, some do not. Find them all, then you will sort them.
             </p>
           </div>
         )}

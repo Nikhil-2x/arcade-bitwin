@@ -2,4 +2,5 @@
 export const LAW_PATHS = {
   arcade: '/',
   law: '/law',
+  level: (level: number) => `/law/${level}`,
 } as const

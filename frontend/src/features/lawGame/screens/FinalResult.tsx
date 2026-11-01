@@ -58,6 +58,9 @@ export function FinalResult() {
         <button className="lg-btn ghost" onClick={() => start(theCase.level)}>
           Play again
         </button>
+        <Link className="lg-btn ghost" to={LAW_PATHS.law}>
+          Choose level
+        </Link>
         <Link className="lg-btn" to={LAW_PATHS.arcade}>
           Back to arcade
         </Link>
