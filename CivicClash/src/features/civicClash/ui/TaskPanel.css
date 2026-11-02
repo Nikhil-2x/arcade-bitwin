@@ -1,0 +1,224 @@
+.cc-task-drawer {
+  position: absolute;
+  top: 76px;
+  right: 18px;
+  width: 320px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
+  color: #f8fafc;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  z-index: 80;
+  transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+  overflow: hidden;
+}
+
+.cc-task-header {
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cc-task-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cc-task-icon {
+  font-size: 1.1rem;
+}
+
+.cc-task-header-text {
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #e2e8f0;
+  flex: 1;
+}
+
+.cc-task-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: rgba(56, 189, 248, 0.2);
+  color: #38bdf8;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+.cc-task-toggle-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.cc-task-progress-mini {
+  height: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.cc-task-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #10b981);
+  transition: width 0.3s ease;
+}
+
+.cc-task-body {
+  max-height: 440px;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cc-task-body::-webkit-scrollbar {
+  width: 5px;
+}
+
+.cc-task-body::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+
+.cc-task-section-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.cc-task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cc-task-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.cc-task-card.interactive:hover {
+  background: rgba(51, 65, 85, 0.6);
+  border-color: rgba(56, 189, 248, 0.4);
+  transform: translateY(-1px);
+  cursor: pointer;
+}
+
+.cc-task-card.completed {
+  opacity: 0.65;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.cc-task-card.completed .cc-task-title {
+  text-decoration: line-through;
+  color: #a7f3d0;
+}
+
+.cc-task-card.locked {
+  opacity: 0.5;
+  background: rgba(15, 23, 42, 0.4);
+  border-color: rgba(255, 255, 255, 0.04);
+}
+
+.cc-task-status-indicator {
+  font-size: 0.85rem;
+  width: 18px;
+  text-align: center;
+  color: #38bdf8;
+  margin-top: 1px;
+}
+
+.cc-task-card.completed .cc-task-status-indicator {
+  color: #10b981;
+}
+
+.cc-task-card.locked .cc-task-status-indicator {
+  color: #64748b;
+}
+
+.cc-task-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cc-task-name-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.cc-task-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.cc-task-points {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #facc15;
+}
+
+.cc-task-desc {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  line-height: 1.3;
+}
+
+.cc-task-hint {
+  font-size: 0.68rem;
+  color: #38bdf8;
+  margin-top: 3px;
+  background: rgba(56, 189, 248, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.cc-task-deps {
+  font-size: 0.65rem;
+  color: #ef4444;
+  margin-top: 2px;
+}
+
+.cc-task-item-progress {
+  height: 3px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+}
+
+.cc-task-item-fill {
+  height: 100%;
+  background: #38bdf8;
+}
