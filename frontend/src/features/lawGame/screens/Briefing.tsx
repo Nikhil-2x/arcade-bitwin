@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Avatar } from '../ui/Avatar.tsx'
 import { LawNote } from '../ui/LawNote.tsx'
 import { useLawGame } from '../store/useLawGame.ts'
@@ -9,12 +9,88 @@ const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matc
 /** The case file as a short film, read by both players together before anyone hides anything. */
 export function Briefing() {
   const finishBriefing = useLawGame((s) => s.finishBriefing)
+  const theCase = useLawGame((s) => s.theCase)
   const [i, setI] = useState(0)
+  const [muted, setMuted] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  useEffect(() => {
+    const audio = new Audio(`/audio/voiceover/${theCase.scene}.mp3`)
+    audioRef.current = audio
+    audio.volume = 0.85
+
+    const playPromise = audio.play()
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Delayed by browser autoplay policy until player interacts
+      })
+    }
+
+    return () => {
+      audio.pause()
+      audio.currentTime = 0
+      audioRef.current = null
+    }
+  }, [theCase.scene])
+
+  const toggleMute = useCallback((e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    if (!audioRef.current) return
+    if (audioRef.current.paused) {
+      audioRef.current.play().catch(() => {})
+      setMuted(false)
+    } else {
+      const nextMuted = !audioRef.current.muted
+      audioRef.current.muted = nextMuted
+      setMuted(nextMuted)
+    }
+  }, [])
+
+  const ensurePlaying = useCallback(() => {
+    if (audioRef.current && audioRef.current.paused && !muted) {
+      audioRef.current.play().catch(() => {})
+    }
+  }, [muted])
+
+  const handleFinish = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause()
+    }
+    finishBriefing()
+  }, [finishBriefing])
+
   // Keyed by beat: each one starts typing from zero without any reset logic.
-  return <BeatScene key={i} index={i} onNext={() => setI((n) => n + 1)} onFinish={finishBriefing} />
+  return (
+    <BeatScene
+      key={i}
+      index={i}
+      onNext={() => {
+        ensurePlaying()
+        setI((n) => n + 1)
+      }}
+      onFinish={handleFinish}
+      muted={muted}
+      onToggleMute={toggleMute}
+      ensureAudio={ensurePlaying}
+    />
+  )
 }
 
-function BeatScene({ index, onNext, onFinish }: { index: number; onNext: () => void; onFinish: () => void }) {
+function BeatScene({
+  index,
+  onNext,
+  onFinish,
+  muted,
+  onToggleMute,
+  ensureAudio,
+}: {
+  index: number
+  onNext: () => void
+  onFinish: () => void
+  muted: boolean
+  onToggleMute: (e?: React.MouseEvent) => void
+  ensureAudio: () => void
+}) {
   const theCase = useLawGame((s) => s.theCase)
   const beat = theCase.beats[index]
   const last = index === theCase.beats.length - 1
@@ -28,10 +104,11 @@ function BeatScene({ index, onNext, onFinish }: { index: number; onNext: () => v
   }, [done])
 
   const advance = useCallback(() => {
+    ensureAudio()
     if (!done) setTyped(beat.text.length)
     else if (last) onFinish()
     else onNext()
-  }, [done, last, beat, onNext, onFinish])
+  }, [done, last, beat, onNext, onFinish, ensureAudio])
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -88,6 +165,15 @@ function BeatScene({ index, onNext, onFinish }: { index: number; onNext: () => v
           <span className="lg-dim" style={{ fontSize: '0.8rem' }}>
             Both players read together
           </span>
+          <button
+            type="button"
+            className="lg-btn small ghost"
+            onClick={onToggleMute}
+            title={muted ? 'Unmute voiceover' : 'Mute voiceover'}
+            aria-label={muted ? 'Unmute voiceover' : 'Mute voiceover'}
+          >
+            {muted ? '🔇 Voice' : '🔊 Voice'}
+          </button>
           <button className="lg-btn small ghost" onClick={onFinish}>
             Skip
           </button>
