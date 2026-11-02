@@ -16,6 +16,8 @@ export interface RoomQueryOptions {
   ignored: ReadonlySet<string>
   /** Material names you can walk through, though they can still hide things. */
   walkThrough: ReadonlySet<string>
+  /** Material names that stop the player but hide nothing, like a glass wall. */
+  seeThrough?: ReadonlySet<string>
   /** Material whose bounds are the floor. Ignored when `floor` is given. */
   floorMaterial?: string
   /** The floor's bounds, for worlds with no single floor mesh. */
@@ -61,6 +63,10 @@ export class RoomQueries {
       if (!this.boxes.has(name)) this.boxes.set(name, new THREE.Box3())
       this.boxes.get(name)!.expandByObject(o)
       if (options.ignored.has(name)) return
+      if (options.seeThrough?.has(name)) {
+        this.solids.push(o)
+        return
+      }
       this.occluders.push(o)
       if (!options.walkThrough.has(name)) this.solids.push(o)
     })

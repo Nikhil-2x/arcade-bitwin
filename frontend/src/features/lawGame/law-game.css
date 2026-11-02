@@ -57,6 +57,7 @@
 .lg-cine-bg { position: absolute; inset: -6%; animation: lg-drift 14s ease-in-out infinite alternate; transition: background 1.2s; }
 @keyframes lg-drift { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.12) translate(-2%, -1.5%); } }
 .lg-cine-bg.day { background: radial-gradient(ellipse at 70% 20%, #ffd58a 0%, #b8743a 28%, #2a1d2e 70%, #090a14 100%); }
+.lg-cine-bg.vault { background: radial-gradient(ellipse at 50% 12%, #e2b567 0%, #7a5426 24%, #2c2118 58%, #0b0a0c 100%); }
 .lg-cine-bg.shore { background: radial-gradient(ellipse at 72% 18%, #fff0b8 0%, #5cc4cf 26%, #14607e 62%, #06202f 100%); }
 .lg-cine-bg.dusk { background: radial-gradient(ellipse at 25% 25%, #ff8a5b 0%, #8a3b52 32%, #261a3a 70%, #070812 100%); }
 .lg-cine-bg.night { background: radial-gradient(ellipse at 60% 25%, #3b5a9a 0%, #1b2450 36%, #0a0d22 72%, #04050b 100%); }
@@ -236,6 +237,7 @@ button.lg-card:hover { transform: translateY(-5px); border-color: var(--lg-amber
 .lg-lv-slot { display: flex; min-width: 0; }
 .lg-lv-case.railway { --tone: #9eecff; }
 .lg-lv-case.beach { --tone: #7ee0c4; }
+.lg-lv-case.bank { --tone: #f0c674; }
 .lg-lv-case:hover, .lg-lv-case:focus-visible { transform: translateY(-8px); border-color: var(--tone); box-shadow: 0 0 0 1px var(--tone), 0 24px 60px rgba(0, 0, 0, 0.6), 0 0 50px color-mix(in srgb, var(--tone) 32%, transparent); outline: none; }
 .lg-lv-art { position: relative; border-radius: 13px; overflow: hidden; aspect-ratio: 320 / 170; max-height: 34vh; width: 100%; background: #0b0e22; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); }
 .lg-lv-svg { display: block; width: 100%; height: 100%; }

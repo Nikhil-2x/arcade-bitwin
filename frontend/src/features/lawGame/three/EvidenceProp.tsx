@@ -213,6 +213,72 @@ function Shape({ kind }: { kind: EvidenceKind }) {
           </mesh>
         </group>
       )
+    case 'cash':
+      return (
+        <group rotation={[0, 0.35, 0]}>
+          {[
+            [-0.085, 0.016, -0.03, 0.05],
+            [0.085, 0.016, 0.02, -0.08],
+            [0, 0.048, -0.004, 0.14],
+          ].map(([x, y, z, turn]) => (
+            <group key={turn} position={[x, y, z]} rotation={[0, turn, 0]}>
+              <mesh castShadow>
+                <boxGeometry args={[0.158, 0.03, 0.074]} />
+                {std('#8e7ab5', { roughness: 0.92 })}
+              </mesh>
+              <mesh>
+                <boxGeometry args={[0.036, 0.033, 0.077]} />
+                {std('#f0e6c8', { roughness: 0.85 })}
+              </mesh>
+            </group>
+          ))}
+        </group>
+      )
+    case 'chequebook':
+      return (
+        <group rotation={[0, 0.5, 0]}>
+          <mesh position={[0, 0.006, 0]} castShadow>
+            <boxGeometry args={[0.2, 0.012, 0.085]} />
+            {std('#1f4f7a', { roughness: 0.8 })}
+          </mesh>
+          <mesh position={[0.022, 0.0132, 0]}>
+            <boxGeometry args={[0.15, 0.0015, 0.07]} />
+            {std('#e6ecd8', { roughness: 0.95 })}
+          </mesh>
+          <mesh position={[0.03, 0.0145, 0.012]}>
+            <boxGeometry args={[0.08, 0.0008, 0.005]} />
+            {std('#28324a')}
+          </mesh>
+        </group>
+      )
+    case 'passbook':
+      return (
+        <group rotation={[0, -0.7, 0]}>
+          {[0, 1].map((i) => (
+            <mesh key={i} position={[i * 0.018, 0.008 + i * 0.016, i * -0.012]} rotation={[0, i * 0.4, 0]} castShadow>
+              <boxGeometry args={[0.105, 0.015, 0.145]} />
+              {std(i ? '#2f7d5b' : '#8c2f39', { roughness: 0.7 })}
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'pendrive':
+      return (
+        <group rotation={[0, 1.1, 0]}>
+          <mesh position={[0, 0.009, 0]} castShadow>
+            <boxGeometry args={[0.022, 0.016, 0.062]} />
+            {std('#1c1f26', { roughness: 0.4 })}
+          </mesh>
+          <mesh position={[0, 0.009, 0.041]}>
+            <boxGeometry args={[0.014, 0.0055, 0.022]} />
+            {std('#c7ccd2', { metalness: 0.9, roughness: 0.25 })}
+          </mesh>
+          <mesh position={[0, 0.0175, -0.016]}>
+            <boxGeometry args={[0.009, 0.001, 0.009]} />
+            {std('#ef5a48', { emissive: '#7a1d12' })}
+          </mesh>
+        </group>
+      )
     case 'receipt':
       return (
         <mesh position={[0, 0.003, 0]} rotation={[0, 0.2, 0]}>

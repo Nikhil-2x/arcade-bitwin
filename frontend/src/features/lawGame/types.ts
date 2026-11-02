@@ -1,9 +1,9 @@
 export type PlayerIndex = 0 | 1
 
-export type EvidenceKind = 'envelope' | 'phone' | 'key' | 'printout' | 'bottle' | 'receipt' | 'cable' | 'cutters' | 'pass' | 'tiffin' | 'sack' | 'trowel' | 'padlock' | 'sunscreen' | 'flipflop'
+export type EvidenceKind = 'envelope' | 'phone' | 'key' | 'printout' | 'bottle' | 'receipt' | 'cable' | 'cutters' | 'pass' | 'tiffin' | 'sack' | 'trowel' | 'padlock' | 'sunscreen' | 'flipflop' | 'cash' | 'chequebook' | 'passbook' | 'pendrive'
 
 /** Which 3D world a case plays out in. */
-export type SceneId = 'classroom' | 'railway' | 'beach'
+export type SceneId = 'classroom' | 'railway' | 'beach' | 'bank'
 
 export interface LawRef {
   act: string
@@ -42,7 +42,7 @@ export interface Suspect {
   statement: string
 }
 
-export type Mood = 'day' | 'dusk' | 'night' | 'alarm' | 'shore'
+export type Mood = 'day' | 'dusk' | 'night' | 'alarm' | 'shore' | 'vault'
 
 export interface StoryBeat {
   kicker: string

@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Original 3D models: too big for git, and not to be deployed. Optimised copies live in public/models.
+model-sources

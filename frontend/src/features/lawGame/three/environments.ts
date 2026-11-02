@@ -67,6 +67,17 @@ export const ENVIRONMENTS: Record<SceneId, EnvironmentMeta> = {
     reach: 3,
     placeExtra: 0,
   },
+  bank: {
+    load: () => import('./bank/bankEnvironment.ts'),
+    far: 220,
+    // The model stops at its openings: what shows through them should read as a bright morning outside.
+    background: '#f1e7d2',
+    dpr: [1, 1.5],
+    adaptive: true,
+    // Rope and glass leave hard edges here too: nothing may be placed out of the detective's reach.
+    reach: 3,
+    placeExtra: 0,
+  },
 }
 
 const loaded = new Map<SceneId, Promise<LoadedEnvironment>>()

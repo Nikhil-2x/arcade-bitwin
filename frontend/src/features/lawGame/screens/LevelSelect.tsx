@@ -139,13 +139,74 @@ function BeachArt() {
   )
 }
 
-const ART: Record<SceneId, () => React.JSX.Element> = { classroom: ClassroomArt, railway: RailwayArt, beach: BeachArt }
+/** The banking hall: the strongroom door turns, a note counter riffles, and one coin goes missing from the pile. */
+function BankArt() {
+  return (
+    <svg viewBox="0 0 320 170" aria-hidden className="lg-lv-svg">
+      <defs>
+        <linearGradient id="lg-lv-hall" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#3a2a1c" />
+          <stop offset="100%" stopColor="#a87c49" />
+        </linearGradient>
+      </defs>
+      <rect width="320" height="170" fill="url(#lg-lv-hall)" />
+      <path d="M0 58 160 14l160 44z" fill="#2a1e15" />
+      <path d="M0 58h320v7H0z" fill="#d8c8a6" />
+      {[34, 92, 228, 286].map((x) => (
+        <g key={x}>
+          <rect x={x - 9} y="65" width="18" height="71" fill="#e6d9bd" />
+          <path d={`M${x - 3} 65v71M${x + 3} 65v71`} stroke="#b7a786" strokeWidth="1.5" />
+          <rect x={x - 12} y="130" width="24" height="7" fill="#c2b290" />
+        </g>
+      ))}
+      {/* The strongroom door. */}
+      <circle cx="160" cy="92" r="42" fill="#2d2f36" />
+      <circle cx="160" cy="92" r="42" fill="none" stroke="#c9a24a" strokeWidth="3" />
+      <motion.g style={{ transformBox: 'fill-box', originX: 0.5, originY: 0.5 }} animate={{ rotate: [0, 90, 90, 0, 0] }} transition={{ duration: 9, times: [0, 0.2, 0.55, 0.75, 1], ease: 'easeInOut', repeat: Infinity }}>
+        <circle cx="160" cy="92" r="27" fill="#454852" />
+        <path d="M160 68v48M136 92h48M143 75l34 34M177 75l-34 34" stroke="#c9a24a" strokeWidth="3.5" strokeLinecap="round" />
+        <circle cx="160" cy="92" r="7" fill="#c9a24a" />
+      </motion.g>
+      {/* The floor, and the teller's counter. */}
+      <rect y="136" width="320" height="34" fill="#efe7d3" />
+      <path d="M0 148h320M60 136l-24 34M260 136l24 34M160 136v34" stroke="#b7a786" strokeWidth="1.2" />
+      <rect x="10" y="122" width="64" height="30" rx="2" fill="#40281a" />
+      <rect x="6" y="118" width="72" height="6" fill="#c9a24a" />
+      {/* Notes riffling through the counter. */}
+      <rect x="24" y="104" width="36" height="14" rx="2" fill="#20232c" />
+      {[0, 1, 2].map((i) => (
+        <motion.rect
+          key={i}
+          x="32"
+          y="97"
+          width="20"
+          height="9"
+          fill="#a58fd1"
+          stroke="#6d5a96"
+          strokeWidth="0.6"
+          animate={{ y: [12, -8], opacity: [0, 1, 0] }}
+          transition={{ duration: 0.9, delay: i * 0.3, ease: 'easeOut', repeat: Infinity }}
+        />
+      ))}
+      {/* The pile, with one coin rolling away. */}
+      {[0, 1, 2, 3].map((i) => (
+        <ellipse key={i} cx="256" cy={154 - i * 5} rx="17" ry="5" fill={i % 2 ? '#d9b34f' : '#c9a24a'} stroke="#8a6d2a" strokeWidth="0.8" />
+      ))}
+      <motion.g animate={{ x: [0, 0, -92, -92], opacity: [0, 1, 1, 0] }} transition={{ duration: 6, times: [0, 0.2, 0.8, 1], ease: 'easeIn', repeat: Infinity }}>
+        <circle cx="238" cy="154" r="7" fill="#e2c15c" stroke="#8a6d2a" />
+      </motion.g>
+    </svg>
+  )
+}
+
+const ART: Record<SceneId, () => React.JSX.Element> = { classroom: ClassroomArt, railway: RailwayArt, beach: BeachArt, bank: BankArt }
 
 /** What each case teaches, in words a player will recognise. */
 const TEACHES: Record<SceneId, string> = {
   classroom: 'Theft, trespass and exam leaks, and how evidence stands up in court.',
   railway: 'The Railways Act: trespass, signal tampering, damage to railway property and the alarm chain.',
   beach: 'The Wild Life Act: protected turtles, nests and eggs, illegal trade, and safety on the shore.',
+  bank: 'Financial crime: money laundering, forgery, breach of trust, cheque bounce and cyber fraud.',
 }
 
 const TAPE = 'CRIME SCENE  DO NOT CROSS  '.repeat(14)
@@ -210,7 +271,11 @@ export default function LevelSelect() {
           <a href="https://sketchfab.com/3d-models/karpen-albania-drone-3d-scan-dd0c6d2411f44352a3bff7ec45d57902" target="_blank" rel="noreferrer">
             Sircher
           </a>
-          , CC BY 4.0.
+          , CC BY 4.0. Level 4 bank hall by{' '}
+          <a href="https://sketchfab.com/3d-models/the-bank-hall-7ff86c154ac843c48c4b0ec0149d4321" target="_blank" rel="noreferrer">
+            Veterock
+          </a>
+          , CC BY 4.0. Optimised for the web.
         </footer>
       </div>
     </MotionConfig>
