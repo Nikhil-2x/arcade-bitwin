@@ -132,7 +132,7 @@ class GameStateImpl {
     this.surpriseAlly = false
     this.tally[level] = { runner: [0, 0], barrier: [0, 0], bystander: [0, 0] }
     // the ending is judged on this play of Level 3 only, so a replay starts its counters clean
-    if (level === 3) for (const p of this.players) p.l3Correct = p.l3Wrong = p.l3Allies = 0
+    if (level === 3 || level === 4) for (const p of this.players) p.l3Correct = p.l3Wrong = p.l3Allies = 0
     this.steps = [{ level, runner: 0, barrier: 1, round: 0 }]
     if (this.mode === 'duo') this.steps.push({ level, runner: 1, barrier: 0, round: 1 })
   }
@@ -179,7 +179,7 @@ class GameStateImpl {
 
   /** Level 3 has been played to the end at least once, so the ending and results have something to show. */
   get storyFinished() {
-    return this.players[0].story.won[3] !== undefined
+    return this.players[0].story.won[3] !== undefined || this.players[0].story.won[4] !== undefined
   }
 
   /** Is the next step the first round of a new level? */

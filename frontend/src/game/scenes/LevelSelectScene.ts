@@ -36,8 +36,11 @@ export class LevelSelectScene extends Phaser.Scene {
       hex(COLORS.muted),
     ).setOrigin(0.5, 0)
 
-    const gap = (W - 3 * CARD_W) / 4
-    ;([1, 2, 3] as LevelId[]).forEach((id, i) => this.card(gap + i * (CARD_W + gap), id, i))
+    const levelIds = [1, 2, 3, 4] as LevelId[]
+    const count = levelIds.length
+    const cardW = count > 3 ? 270 : CARD_W
+    const gap = (W - count * cardW) / (count + 1)
+    levelIds.forEach((id, i) => this.card(gap + i * (cardW + gap), id, i, cardW))
 
     const backTo = duo ? 'Room' : 'Menu'
     const back = button(this, 150, CARD_Y + CARD_H + 56, 200, 46, 'BACK', () => this.go(backTo), COLORS.muted, 15, { key: 'ESC' })
@@ -47,21 +50,22 @@ export class LevelSelectScene extends Phaser.Scene {
     kb?.on('keydown-ONE', () => this.pick(1))
     kb?.on('keydown-TWO', () => this.pick(2))
     kb?.on('keydown-THREE', () => this.pick(3))
+    kb?.on('keydown-FOUR', () => this.pick(4))
     kb?.on('keydown-ESC', () => this.go(backTo))
   }
 
-  private card(x: number, id: LevelId, i: number) {
+  private card(x: number, id: LevelId, i: number, cardW = CARD_W) {
     const def = LEVELS[id]
     const items: Phaser.GameObjects.GameObject[] = []
-    items.push(panel(this, x, CARD_Y, CARD_W, CARD_H, COLORS.panel, COLORS.amber))
+    items.push(panel(this, x, CARD_Y, cardW, CARD_H, COLORS.panel, COLORS.amber))
     items.push(display(this, x + 28, CARD_Y + 22, `0${id}`, 54, hex(COLORS.amber)))
-    items.push(display(this, x + 28, CARD_Y + 96, def.title.toUpperCase(), 22, hex(COLORS.paper)))
+    items.push(display(this, x + 24, CARD_Y + 96, def.title.toUpperCase(), cardW > 300 ? 22 : 18, hex(COLORS.paper)))
     items.push(text(this, x + 28, CARD_Y + 132, `${def.place}  /  ${def.time} seconds`, 15, hex(COLORS.muted)))
-    items.push(text(this, x + 28, CARD_Y + 166, def.tone, 15, hex(COLORS.paper), { wordWrap: { width: CARD_W - 56 }, lineSpacing: 4 }))
+    items.push(text(this, x + 24, CARD_Y + 166, def.tone, 14, hex(COLORS.paper), { wordWrap: { width: cardW - 48 }, lineSpacing: 4 }))
     items.push(display(this, x + 28, CARD_Y + 236, 'THE BARRIER', 11, hex(COLORS.muted)))
     items.push(display(this, x + 28, CARD_Y + 254, def.persona.name.toUpperCase(), 16, '#c9b8ff'))
     items.push(text(this, x + 28, CARD_Y + 280, `${def.abilities.length} abilities`, 14, hex(COLORS.muted)))
-    const play = button(this, x + CARD_W / 2, CARD_Y + CARD_H - 40, CARD_W - 56, 50, 'PLAY', () => this.pick(id), COLORS.amber, 18, { key: `${id}` })
+    const play = button(this, x + cardW / 2, CARD_Y + CARD_H - 40, cardW - 48, 50, 'PLAY', () => this.pick(id), COLORS.amber, 18, { key: `${id}` })
     items.push(play.container)
 
     // cards rise in one after another

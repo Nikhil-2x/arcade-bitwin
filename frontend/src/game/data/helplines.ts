@@ -69,6 +69,30 @@ export const HELPLINES: HelplineCard[] = [
     hint: '',
     reason: '112 or 101 reach emergency and fire services.',
   },
+  {
+    id: 's09', level: 4,
+    text: 'You are stranded at an outer transit terminal late at night and suspect you are being followed near the railway/metro line. Who can you reach for railway security?',
+    options: ['139  RailMadad / Transit Security', '108  Ambulance', '1930  Cybercrime', '101  Fire'],
+    correct: [0], best: 0,
+    hint: 'Hint: integrated helpline for railway and transit security.',
+    reason: '139 is the 24/7 security and assistance helpline for railway and transit premises (or 112 for national emergency).',
+  },
+  {
+    id: 's10', level: 4,
+    text: 'A stranger on a scooter blocks the road ahead, demands you hand over your phone, and acts aggressively. What is the fastest emergency call?',
+    options: ['112  National Emergency', '1098  Childline', '1930  Cybercrime', 'Wait and negotiate'],
+    correct: [0], best: 0,
+    hint: 'Hint: one universal number for immediate police intervention.',
+    reason: '112 connects immediately to police dispatch with location tracking.',
+  },
+  {
+    id: 's11', level: 4,
+    text: 'You witness someone being harassed at a bus shelter and the situation is escalating dangerously. Which numbers connect directly to police or women safety support?',
+    options: ['112 or 181  Emergency / Women Helpline', '1098  Childline', '1930  Cybercrime', '108  Ambulance'],
+    correct: [0], best: 0,
+    hint: 'Hint: emergency police services and women helplines.',
+    reason: '112 dispatches immediate police response; 181 provides women-specific emergency support.',
+  },
 ]
 
 export const cardById = (id: string) => HELPLINES.find((c) => c.id === id)!

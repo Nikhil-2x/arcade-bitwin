@@ -546,7 +546,7 @@ export class LevelScene extends Phaser.Scene {
     this.story.networkScore++
     this.run.alliesMade++
     this.rec.allies++
-    if (this.def.id === 3) this.rec.l3Allies++
+    if (this.def.id === 3 || this.def.id === 4) this.rec.l3Allies++
     if (silent) return
     const locked = this.barrier.lockStrongest(this.now, BALANCE.abilityLockTime)
     this.toast(`${a.crew.color === 'white' ? 'A helper' : 'An ally'} joined her circle${locked ? `: ${ABILITIES[locked].name} locked` : ''}`, COLORS.green)
@@ -1114,7 +1114,7 @@ export class LevelScene extends Phaser.Scene {
         if (res.correct) {
           this.rec.callsCorrect++
           this.story.correctCalls++
-          if (this.def.id === 3) this.rec.l3Correct++
+          if (this.def.id === 3 || this.def.id === 4) this.rec.l3Correct++
           r.correct++
           r.battery = Math.min(100, r.battery + BALANCE.correctCallBattery)
           r.awareness += 10
@@ -1129,7 +1129,7 @@ export class LevelScene extends Phaser.Scene {
     const r = this.run
     r.wrong++
     this.story.wrongCalls++
-    if (this.def.id === 3) this.rec.l3Wrong++
+    if (this.def.id === 3 || this.def.id === 4) this.rec.l3Wrong++
     r.battery = Math.max(0, r.battery - BALANCE.wrongCallBattery)
     r.shrinkUntil = this.now + 6
     this.barrier.addEnergy(BALANCE.wrongCallEnergy)

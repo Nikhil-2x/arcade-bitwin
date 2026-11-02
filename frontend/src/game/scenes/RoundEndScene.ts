@@ -29,7 +29,7 @@ export class RoundEndScene extends Phaser.Scene {
     this.cameras.main.fadeIn(300, 7, 9, 20)
     backdrop(this)
     this.add.rectangle(0, 0, 1280, 720, COLORS.bg, 0.55).setOrigin(0)
-    frame(this, `NIGHT 0${def.id} / 03`, 'ROUND REPORT')
+    frame(this, `NIGHT 0${def.id} / 0${Object.keys(LEVELS).length}`, 'ROUND REPORT')
     banner(this, 100, o.win ? 'RUNNER WINS' : 'BARRIER WINS', o.win ? COLORS.green : COLORS.red)
     text(this, 640, 188, REASONS[o.reason], 20, hex(COLORS.paper)).setOrigin(0.5)
 
@@ -66,7 +66,7 @@ export class RoundEndScene extends Phaser.Scene {
   /** A one-line preview of how this Priya's choices change the next level. */
   private carryNotes() {
     const o = GameState.lastOutcome!
-    if (o.step.level === 3) return ''
+    if (o.step.level >= 3) return ''
     const s = GameState.players[o.step.runner].story
     const bits: string[] = []
     if (o.step.level === 1) {
@@ -86,7 +86,7 @@ export class RoundEndScene extends Phaser.Scene {
   private next() {
     if (this.moving) return
     const o = GameState.lastOutcome!
-    if (o.step.level === 3 && !this.bystanderDone) return this.bystander()
+    if ((o.step.level === 3 || o.step.level === 4) && !this.bystanderDone) return this.bystander()
     this.advance()
   }
 
@@ -110,7 +110,7 @@ export class RoundEndScene extends Phaser.Scene {
         const rec = GameState.players[who]
         rec.bystander = BYSTANDER_KEYS[r.choice[0]] ?? 'ignore'
         rec.barrierScore += r.correct ? 60 : 0
-        GameState.tally[3]!.bystander[who] += r.correct ? 60 : 0
+        GameState.tally[o.step.level]!.bystander[who] += r.correct ? 60 : 0
         GameState.surpriseAlly = r.correct
         this.moving = false
         this.advance()

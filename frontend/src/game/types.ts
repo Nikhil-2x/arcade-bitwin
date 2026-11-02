@@ -1,5 +1,5 @@
 export type PlayerIdx = 0 | 1
-export type LevelId = 1 | 2 | 3
+export type LevelId = 1 | 2 | 3 | 4
 export type GameMode = 'solo' | 'duo'
 
 export type AbilityId =
