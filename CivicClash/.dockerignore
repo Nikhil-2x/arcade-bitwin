@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-ssr
+playwright-report
+test-results
+.git
+.gitignore
+.env
+.env.*
+*.log
+*.tsbuildinfo
+DEPLOYMENT.md
+
