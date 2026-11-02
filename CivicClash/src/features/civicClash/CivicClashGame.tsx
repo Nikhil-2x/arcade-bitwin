@@ -99,6 +99,27 @@ export default function CivicClashGame() {
   // Keyboard keys
   const keysDown = useRef<Record<string, boolean>>({})
 
+  // Latest UI state for the input/animation loop, so the loop is registered once
+  // instead of being torn down and restarted whenever any of this state changes.
+  const liveRef = useRef({
+    activeDialogue,
+    isPhoneModalOpen,
+    isInfoLogOpen,
+    nearestInteractable,
+    localRole,
+    matchState,
+    telemetry
+  })
+  liveRef.current = {
+    activeDialogue,
+    isPhoneModalOpen,
+    isInfoLogOpen,
+    nearestInteractable,
+    localRole,
+    matchState,
+    telemetry
+  }
+
   // Keep view in ref for network event callbacks
   const viewRef = useRef<AppView>(view)
   useEffect(() => {
@@ -491,7 +512,14 @@ export default function CivicClashGame() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const code = e.code.toLowerCase()
+      const target = e.target as HTMLElement | null
+      const tag = target?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target?.isContentEditable) return
       keysDown.current[code] = true
+      // Held keys must not re-fire one-shot actions (interact, tools, binder toggle)
+      if (e.repeat) return
+
+      const { activeDialogue, isPhoneModalOpen, isInfoLogOpen, nearestInteractable, localRole, telemetry } = liveRef.current
 
       // 'E' Key: Interact with nearest NPC or Interactive Object
       if (code === 'keye' && viewRef.current === 'playing' && nearestInteractable) {
@@ -535,8 +563,14 @@ export default function CivicClashGame() {
       keysDown.current[code] = false
     }
 
+    // Releasing focus (alt-tab, clicking outside) never delivers keyup: clear held keys
+    const handleBlur = () => {
+      keysDown.current = {}
+    }
+
     window.addEventListener('keydown', handleKeyDown)
     window.addEventListener('keyup', handleKeyUp)
+    window.addEventListener('blur', handleBlur)
 
     let animId = 0
     let lastTime = performance.now()
@@ -547,6 +581,7 @@ export default function CivicClashGame() {
 
       if (viewRef.current === 'playing' && urbanSceneRef.current) {
         const scene = urbanSceneRef.current
+        const { activeDialogue, isPhoneModalOpen, isInfoLogOpen, localRole, matchState } = liveRef.current
 
         // Don't move while dialogue or modal is open or match is paused
         const isInteracting = !!activeDialogue || isPhoneModalOpen || isInfoLogOpen || (matchState && matchState.phase !== 'ROUND_ACTIVE')
@@ -562,11 +597,11 @@ export default function CivicClashGame() {
           scene.handleLocalMovement(moveZ, moveX, sprint, delta)
         }
 
-        setLocalCoords({
-          x: scene.localPos.x,
-          y: scene.localPos.y,
-          z: scene.localPos.z
-        })
+        // Only touch React state when something visible changed (avoids a re-render every frame)
+        const cx = Math.round(scene.localPos.x * 10) / 10
+        const cy = Math.round(scene.localPos.y * 10) / 10
+        const cz = Math.round(scene.localPos.z * 10) / 10
+        setLocalCoords((prev) => (prev.x === cx && prev.y === cy && prev.z === cz ? prev : { x: cx, y: cy, z: cz }))
         setIsLocalMoving(scene.isMoving)
         setIsLocalSprinting(scene.isSprinting)
 
@@ -620,7 +655,12 @@ export default function CivicClashGame() {
           }
         }
 
-        setNearestInteractable(closest)
+        setNearestInteractable((prev) => {
+          if (!closest) return prev === null ? prev : null
+          if (prev && prev.id === closest.id && prev.type === closest.type && prev.prompt === closest.prompt) return prev
+          const { dist: _dist, ...next } = closest
+          return next
+        })
       }
 
       animId = requestAnimationFrame(loop)
@@ -631,9 +671,10 @@ export default function CivicClashGame() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown)
       window.removeEventListener('keyup', handleKeyUp)
+      window.removeEventListener('blur', handleBlur)
       cancelAnimationFrame(animId)
     }
-  }, [activeDialogue, isPhoneModalOpen, isInfoLogOpen, nearestInteractable, localRole, matchState])
+  }, [])
 
   // ─────────────────────────────────────────────────────────────
   // HANDLERS

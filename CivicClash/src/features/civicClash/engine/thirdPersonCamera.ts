@@ -15,6 +15,7 @@ export class ThirdPersonCamera {
   private prevMouseY: number = 0
 
   private domElement: HTMLElement
+  private removeListeners: () => void = () => {}
 
   constructor(camera: THREE.PerspectiveCamera, domElement: HTMLElement) {
     this.camera = camera
@@ -68,6 +69,19 @@ export class ThirdPersonCamera {
     window.addEventListener('mouseup', onMouseUp)
     this.domElement.addEventListener('contextmenu', onContextMenu)
     this.domElement.addEventListener('wheel', onWheel)
+
+    this.removeListeners = () => {
+      this.domElement.removeEventListener('mousedown', onMouseDown)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+      this.domElement.removeEventListener('contextmenu', onContextMenu)
+      this.domElement.removeEventListener('wheel', onWheel)
+    }
+  }
+
+  public dispose() {
+    this.removeListeners()
+    this.isDragging = false
   }
 
   public update(targetPos: THREE.Vector3) {

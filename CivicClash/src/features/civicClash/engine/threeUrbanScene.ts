@@ -1392,6 +1392,7 @@ export class ThreeUrbanScene {
     cancelAnimationFrame(this.animFrameId)
     window.removeEventListener('resize', this.onWindowResize)
     window.removeEventListener('keydown', this.onKeyDown)
+    this.thirdPersonCamera.dispose()
     this.mechanisms.dispose()
     this.renderer.dispose()
     this.scene.clear()
