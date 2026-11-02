@@ -61,7 +61,6 @@ export class BarrierAI {
   private lastDrainAt = -99
   private lastFakeMsgAt = -99
   private lastFlickerAt = -99
-  private lastComboAt = -99
 
   constructor(host: LevelScene) {
     this.host = host
@@ -173,7 +172,7 @@ export class BarrierAI {
       targetY = py + Math.sin(this.stalkOffsetAngle) * orbitRadius
     } else if (distGoal < 260) {
       // Goal Blocking: Hover between Priya and the exit
-      const [gc, gr, gw, gh] = h.goalRect
+      const [gc, gr, gw, gh] = h.world.data.goal
       const gx = (gc + gw / 2) * TILE
       const gy = (gr + gh / 2) * TILE
       targetX = (px + gx) / 2 + Math.sin(now * 2) * 20
@@ -232,7 +231,6 @@ export class BarrierAI {
       const litLamp = this.findBestLampToKill()
       if (litLamp) {
         this.lastIsolateAt = now
-        this.lastComboAt = now
 
         const combo: QueuedAction[] = [
           { id: 'isolate', x: px, y: py, aimTime: 0.25, postDelay: 0.2 },
@@ -535,7 +533,7 @@ export class BarrierAI {
    */
   private findGateOnPriyaPath(minDist: number, maxDist: number) {
     const h = this.host
-    const [gc, gr, gw, gh] = h.goalRect
+    const [gc, gr, gw, gh] = h.world.data.goal
     const gx = (gc + gw / 2) * TILE
     const gy = (gr + gh / 2) * TILE
 
@@ -587,7 +585,7 @@ export class BarrierAI {
     if (gateAhead) {
       return { x: gateAhead.x + gateAhead.w / 2, y: gateAhead.y + gateAhead.h / 2 }
     }
-    const [gc, gr, gw, gh] = h.goalRect
+    const [gc, gr, gw, gh] = h.world.data.goal
     const path = h.world.path(h.px, h.py, (gc + gw / 2) * TILE, (gr + gh / 2) * TILE)
     if (path.length > 4) {
       const waypoint = path[Math.min(path.length - 1, 6)]
@@ -611,7 +609,7 @@ export class BarrierAI {
 
   private distToGoal(): number {
     const h = this.host
-    const [gc, gr, gw, gh] = h.goalRect
+    const [gc, gr, gw, gh] = h.world.data.goal
     const gx = (gc + gw / 2) * TILE
     const gy = (gr + gh / 2) * TILE
     return dist(h.px, h.py, gx, gy)
