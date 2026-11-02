@@ -1,0 +1,185 @@
+.cc-debrief-backdrop {
+  z-index: 170;
+  background: rgba(8, 12, 22, 0.9);
+  backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cc-debrief-modal {
+  width: 90%;
+  max-width: 760px;
+  background: #0f172a;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: 16px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.85);
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 28px;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: ccDebriefFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ccDebriefFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cc-debrief-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.cc-debrief-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  padding: 4px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.cc-debrief-header h2 {
+  font-size: 1.45rem;
+  font-weight: 900;
+  margin: 4px 0 0;
+  color: #f8fafc;
+}
+
+.cc-debrief-sub {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.cc-debrief-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.cc-debrief-card {
+  border-radius: 12px;
+  padding: 14px 18px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cc-debrief-card.correct {
+  border-color: rgba(16, 185, 129, 0.3);
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.cc-debrief-card.improve {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.cc-debrief-card.takeaway {
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.cc-card-hdr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cc-card-hdr h4 {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.cc-debrief-card.correct h4 {
+  color: #34d399;
+}
+
+.cc-debrief-card.improve h4 {
+  color: #fbbf24;
+}
+
+.cc-debrief-card.takeaway h4 {
+  color: #38bdf8;
+}
+
+.cc-debrief-card ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.cc-takeaway-text {
+  font-size: 0.82rem;
+  color: #f1f5f9;
+  line-height: 1.45;
+  margin: 0 0 8px;
+}
+
+.cc-guidance-ref {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 6px;
+}
+
+.cc-guidance-ref strong {
+  color: #38bdf8;
+}
+
+.cc-debrief-disclaimer {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-align: center;
+  margin-top: 14px;
+  font-style: italic;
+}
+
+.cc-debrief-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.cc-debrief-btn {
+  background: linear-gradient(135deg, #0284c7, #2563eb);
+  color: #ffffff;
+  border: none;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 12px 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+  transition: all 0.2s ease;
+}
+
+.cc-debrief-btn:hover {
+  background: linear-gradient(135deg, #0369a1, #1d4ed8);
+  transform: translateY(-2px);
+}

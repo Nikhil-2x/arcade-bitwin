@@ -1,0 +1,45 @@
+{
+  "name": "civic-clash",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "start": "node server/server.js",
+    "preview": "vite preview",
+    "server": "node server/server.js",
+    "test": "node server/test_full_six_rounds_match.js",
+    "test:milestones": "node server/test_milestone4.js && node server/test_milestone5.js && node server/test_milestone6.js",
+    "test:levels": "node server/test_level_selection_and_winner.js",
+    "test:bot": "node server/test_solo_and_bot_match_start.js",
+    "test:all": "npm run test:mechanics && npm run test:strategy && npm run test:privacy && npm run sim:check && npm run test:milestones && npm run test:levels && npm run test:bot && npm test",
+    "sim": "node server/sim_balance.js",
+    "sim:check": "node server/sim_balance.js --check",
+    "tune": "node server/tune_balance.js",
+    "test:strategy": "node server/test_strategy.js",
+    "test:privacy": "node server/test_privacy_leak.js",
+    "test:mechanics": "node server/test_mechanics.js"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "socket.io": "^4.8.4",
+    "socket.io-client": "^4.8.4",
+    "three": "^0.187.0",
+    "ws": "^8.22.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.187.0",
+    "@types/ws": "^8.18.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
