@@ -27,7 +27,7 @@ export function gradeStatement(text: string, theCase: LawCase, npcStatements: st
   const length = n >= 12 && n <= 50 ? 40 : n >= MIN_STATEMENT_WORDS ? 25 : 0
   const place = theCase.placeWords.some((w) => lower.includes(w)) ? 20 : 0
   const time = TIME_WORDS.test(text) && /\d/.test(text) ? 20 : TIME_WORDS.test(text) ? 10 : 0
-  const witness = WITNESS_WORDS.test(text) ? 20 : 0
+  const witness = WITNESS_WORDS.test(text) || theCase.witnessWords?.some((w) => lower.includes(w)) ? 20 : 0
   return [
     { label: 'Alibi detail', points: length, note: `${n} words` },
     { label: 'Names a place', points: place },

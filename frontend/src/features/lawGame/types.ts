@@ -1,6 +1,9 @@
 export type PlayerIndex = 0 | 1
 
-export type EvidenceKind = 'envelope' | 'phone' | 'key' | 'printout' | 'bottle' | 'receipt'
+export type EvidenceKind = 'envelope' | 'phone' | 'key' | 'printout' | 'bottle' | 'receipt' | 'cable' | 'cutters' | 'pass' | 'tiffin'
+
+/** Which 3D world a case plays out in. */
+export type SceneId = 'classroom' | 'railway'
 
 export interface LawRef {
   act: string
@@ -52,8 +55,30 @@ export interface StoryBeat {
   law?: LawRef
 }
 
+/** The words on screen that depend on where the case is set. */
+export interface CaseCopy {
+  /** What the crime scene is called in sentences: "The room is set." */
+  sceneNoun: string
+  /** Button on the character screen. */
+  enterScene: string
+  /** Shown while the 3D model streams in. */
+  loading: string
+  alibiQuestion: string
+  alibiPlaceholder: string
+  /** Extra line on the "click to enter" screens, when a world has something to point out. */
+  sceneTip?: string
+  /** World-specific controls for the help line, shown after the shared ones. */
+  extraControls?: ReadonlyArray<readonly [key: string, action: string]>
+}
+
 export interface LawCase {
   level: number
+  scene: SceneId
+  copy: CaseCopy
+  /** Shown when the player walks up to a boundary with a legal reason behind it, like the tracks. */
+  edgeLaw?: LawRef
+  /** Extra people who count as an alibi's witness in this case. */
+  witnessWords?: string[]
   title: string
   place: string
   tagline: string

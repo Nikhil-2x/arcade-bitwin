@@ -1,16 +1,24 @@
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { PerformanceMonitor } from '@react-three/drei'
+import { Suspense, use, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import * as THREE from 'three'
-import { EYE_HEIGHT, MODEL_SCALE, REACH, RUN_SPEED, WALK_SPEED } from '../config.ts'
-import type { Evidence } from '../types.ts'
-import { Classroom } from './Classroom.tsx'
+import { EYE_HEIGHT, RUN_SPEED, WALK_SPEED } from '../config.ts'
+import type { Evidence, SceneId } from '../types.ts'
+import { ENVIRONMENTS, loadEnvironment, type SpawnPoint } from './environments.ts'
 import { EvidenceProp } from './EvidenceProp.tsx'
+import type { Speech } from '../ui/useSpeech.ts'
 import { RoomQueries } from './RoomQueries.ts'
 
 export type Vec3 = [number, number, number]
 
 export interface RoomSceneProps {
   mode: 'hide' | 'search'
+  /** Which world to load. */
+  scene: SceneId
+  /** The player walked up to a boundary that has a legal reason behind it. */
+  onEdge?: () => void
+  /** Someone in the scene said something the player should read. */
+  onSpeech?: (speech: Speech) => void
   evidences: Evidence[]
   /** Hide: where each item starts (null = on the desk). Search: where the obstructor left them. */
   placed?: Record<string, Vec3>
@@ -27,24 +35,10 @@ export interface RoomSceneProps {
   paused: boolean
 }
 
-const SPAWN_BACK = 0.7
-
-function Lights() {
-  return (
-    <>
-      <ambientLight intensity={0.9} />
-      <hemisphereLight args={['#fff4e0', '#5b5a66', 0.9]} />
-      <directionalLight position={[3, 4, 2]} intensity={1.4} />
-      <pointLight position={[0, 2.5, -1]} intensity={4} distance={9} color="#ffe9c4" />
-      <pointLight position={[0, 2.5, -4]} intensity={4} distance={9} color="#ffe9c4" />
-    </>
-  )
-}
-
 /** Mouse-look, walking and sliding collision. Click the canvas to capture the mouse. */
-function Rig({ q, paused, onLockChange }: { q: RoomQueries; paused: boolean; onLockChange: (l: boolean) => void }) {
+function Rig({ q, spawn, paused, onLockChange }: { q: RoomQueries; spawn: SpawnPoint; paused: boolean; onLockChange: (l: boolean) => void }) {
   const { camera, gl } = useThree()
-  const yaw = useRef(0)
+  const yaw = useRef(spawn.yaw)
   const pitch = useRef(0)
   const keys = useRef(new Set<string>())
   // Held in a ref so a new callback each render never re-runs the listener effect (its cleanup drops the pointer lock).
@@ -52,10 +46,8 @@ function Rig({ q, paused, onLockChange }: { q: RoomQueries; paused: boolean; onL
   useEffect(() => {
     lockCb.current = onLockChange
   })
-  const pos = useMemo(() => {
-    const c = q.floor.getCenter(new THREE.Vector3())
-    return new THREE.Vector3(c.x, EYE_HEIGHT, q.floor.max.z - SPAWN_BACK)
-  }, [q])
+  // Keyed on the numbers, not the object: the parent re-renders with the HUD and must not move the player.
+  const pos = useMemo(() => new THREE.Vector3(spawn.x, EYE_HEIGHT, spawn.z), [spawn.x, spawn.z])
 
   useEffect(() => {
     const el = gl.domElement
@@ -95,6 +87,7 @@ function Rig({ q, paused, onLockChange }: { q: RoomQueries; paused: boolean; onL
 
   useFrame((_, dt) => {
     const k = keys.current
+    let walked = 0
     if (!paused) {
       const f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
       const r = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)
@@ -106,10 +99,14 @@ function Rig({ q, paused, onLockChange }: { q: RoomQueries; paused: boolean; onL
         // yaw 0 faces -z; forward = (-sin, -cos), right = (cos, -sin)
         const dx = ((-sin * f + cos * r) / len) * speed
         const dz = ((-cos * f - sin * r) / len) * speed
+        const fromX = pos.x
+        const fromZ = pos.z
         q.move(pos, dx, dz)
+        walked = Math.hypot(pos.x - fromX, pos.z - fromZ)
       }
     }
     camera.position.copy(pos)
+    camera.position.setY(pos.y + q.floorAt(pos.x, pos.z) + q.headBob(walked))
     camera.rotation.set(pitch.current, yaw.current, 0, 'YXZ')
   })
   return null
@@ -127,6 +124,7 @@ function Interaction(props: RoomSceneProps & {
 }) {
   const { camera } = useThree()
   const { q, mode, paused, evidences, positions, setPositions, carried, setCarried, itemsRef, ghostRef } = props
+  const { reach, placeExtra } = ENVIRONMENTS[props.scene]
   const focus = useRef<string | null>(null)
   const aimPoint = useRef<{ point: THREE.Vector3; normal: THREE.Vector3 } | null>(null)
   const lastPrompt = useRef<string | null | undefined>(undefined)
@@ -160,7 +158,7 @@ function Interaction(props: RoomSceneProps & {
       return
     }
     if (mode === 'hide' && carried) {
-      const a = q.aim(camera, REACH + 0.6)
+      const a = q.aim(camera, reach + placeExtra)
       aimPoint.current = a
       const g = ghostRef.current
       if (g) {
@@ -172,7 +170,7 @@ function Interaction(props: RoomSceneProps & {
     }
     if (++tick.current % 2) return
     const items = itemsRef.current
-    const hit = items ? q.pick(camera, REACH, items.children) : null
+    const hit = items ? q.pick(camera, reach, items.children) : null
     let id: string | null = null
     for (let o: THREE.Object3D | null = hit?.object ?? null; o; o = o.parent) {
       if (o.userData.evidenceId) {
@@ -181,7 +179,7 @@ function Interaction(props: RoomSceneProps & {
       }
     }
     focus.current = id
-    if (!id) say(null)
+    if (!id) say(q.contextPrompt())
     else say(mode === 'hide' ? `E  Pick up ${names.get(id)}` : 'E  Collect evidence')
   })
 
@@ -197,21 +195,26 @@ function Interaction(props: RoomSceneProps & {
           setCarried(null)
         } else if (focus.current) {
           setCarried(focus.current)
+        } else {
+          q.contextAct()
         }
       } else if (focus.current) {
         props.onCollect?.(focus.current)
         focus.current = null
+      } else {
+        q.contextAct()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [mode, paused, carried, positions, setPositions, setCarried, restPoint, props])
+  }, [mode, paused, carried, positions, setPositions, setCarried, restPoint, props, q])
 
   return null
 }
 
 function World({ props }: { props: RoomSceneProps }) {
   const { mode, evidences, collected = [] } = props
+  const env = use(loadEnvironment(props.scene))
   const [q, setQ] = useState<RoomQueries | null>(null)
   const rootRef = useRef<THREE.Group>(null)
   const itemsRef = useRef<THREE.Group>(null)
@@ -225,14 +228,14 @@ function World({ props }: { props: RoomSceneProps }) {
     (g: THREE.Group | null) => {
       rootRef.current = g
       if (!g || q) return
-      const queries = new RoomQueries(g)
+      const queries = env.createQueries(g)
       setQ(queries)
       onReady(queries)
       if (props.placed) {
         setPositions(props.placed)
         return
       }
-      const desk = queries.box('TeachersDeskMat')
+      const desk = queries.box(env.itemsRestOn)
       const c = desk ? desk.getCenter(new THREE.Vector3()) : new THREE.Vector3(0, 0.77, 1.6)
       const next: Record<string, Vec3> = {}
       for (const e of evidences) {
@@ -250,17 +253,25 @@ function World({ props }: { props: RoomSceneProps }) {
     if (mode === 'hide' && positions) onItems?.(positions, carried)
   }, [mode, positions, carried, onItems])
 
+  const onEdge = props.onEdge
+  useEffect(() => {
+    if (!q) return
+    q.setEdgeListener(onEdge ?? null)
+    return () => q.setEdgeListener(null)
+  }, [q, onEdge])
+
   const byId = useMemo(() => new Map(evidences.map((e) => [e.id, e])), [evidences])
 
   return (
     <>
-      <Lights />
-      <group ref={setRoot} scale={MODEL_SCALE}>
-        <Classroom />
+      <env.Lights />
+      <group ref={setRoot} scale={env.scale}>
+        <env.Scenery />
       </group>
+      {q && env.Ambience && <env.Ambience q={q} onSpeech={props.onSpeech} />}
       {q && positions && (
         <>
-          <Rig q={q} paused={props.paused} onLockChange={props.onLockChange} />
+          <Rig q={q} spawn={env.spawn(q)} paused={props.paused} onLockChange={props.onLockChange} />
           <group ref={itemsRef}>
             {evidences.map((e) => {
               const p = positions[e.id]
@@ -292,15 +303,19 @@ function World({ props }: { props: RoomSceneProps }) {
 }
 
 export function RoomScene(props: RoomSceneProps) {
+  const meta = ENVIRONMENTS[props.scene]
+  // Heavier worlds give up resolution before they give up frame rate.
+  const [dpr, setDpr] = useState<number | [number, number]>(meta.dpr)
   return (
     <Canvas
-      camera={{ fov: 72, near: 0.05, far: 60, position: [0, EYE_HEIGHT, 0] }}
-      dpr={[1, 1.75]}
+      camera={{ fov: 72, near: 0.05, far: meta.far, position: [0, EYE_HEIGHT, 0] }}
+      dpr={dpr}
       gl={{ antialias: true }}
       onCreated={({ scene }) => {
-        scene.background = new THREE.Color('#0b0d18')
+        scene.background = new THREE.Color(meta.background)
       }}
     >
+      {meta.adaptive && <PerformanceMonitor onDecline={() => setDpr(1)} />}
       <Suspense fallback={null}>
         <World props={props} />
       </Suspense>

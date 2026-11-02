@@ -55,7 +55,7 @@ export function StatementScreen() {
             <Avatar s={me} />
             <div>
               <b>{me.name}</b> <span className="lg-badge red">You</span>
-              <p style={{ margin: '4px 0 0' }}>Where were you between 4:30 and 7:15 PM? Name a place, a time and someone who saw you.</p>
+              <p style={{ margin: '4px 0 0' }}>{theCase.copy.alibiQuestion}</p>
             </div>
           </div>
           <textarea
@@ -63,7 +63,7 @@ export function StatementScreen() {
             autoFocus
             value={text}
             maxLength={320}
-            placeholder="I was in the…"
+            placeholder={theCase.copy.alibiPlaceholder}
             onChange={(e) => setText(e.target.value)}
             // Typed from scratch: pasting a ready-made alibi would skip the point of the round.
             onPaste={(e) => e.preventDefault()}
@@ -81,7 +81,7 @@ export function StatementScreen() {
 
       <div className="lg-foot">
         <button className="lg-btn" disabled={!ready} onClick={submit}>
-          Lock the room and hand over
+          Lock the {theCase.copy.sceneNoun} and hand over
         </button>
       </div>
     </div>

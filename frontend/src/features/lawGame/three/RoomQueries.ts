@@ -11,6 +11,25 @@ const PROBE_SIDES = [-0.2, 0, 0.2]
 const DOWN = new THREE.Vector3(0, -1, 0)
 const UP = new THREE.Vector3(0, 1, 0)
 
+export interface RoomQueryOptions {
+  /** Material names that never block the player or the line of sight. */
+  ignored: ReadonlySet<string>
+  /** Material names you can walk through, though they can still hide things. */
+  walkThrough: ReadonlySet<string>
+  /** Material whose bounds are the floor. Ignored when `floor` is given. */
+  floorMaterial?: string
+  /** The floor's bounds, for worlds with no single floor mesh. */
+  floor?: THREE.Box3
+  /** Sample eyes for judging concealment. Defaults to a grid over the floor. */
+  viewpoints?: THREE.Vector3[]
+  /** Eyes further away than this do not count when judging concealment. */
+  sightRange?: number
+  /** Called on each mesh as it is collected, to prepare it for raycasting. */
+  prepare?: (mesh: THREE.Mesh) => void
+}
+
+const CLASSROOM_OPTIONS: RoomQueryOptions = { ignored: IGNORED, walkThrough: WALK_THROUGH, floorMaterial: 'FloorMat' }
+
 /**
  * Everything the game asks of the classroom geometry: where the floor is, what blocks a step,
  * where a dropped item lands and how well it is hidden. Built once from the loaded model.
@@ -21,27 +40,38 @@ export class RoomQueries {
   private readonly boxes = new Map<string, THREE.Box3>()
   private readonly occluders: THREE.Object3D[] = []
   private readonly solids: THREE.Object3D[] = []
-  private readonly ray = new THREE.Raycaster()
-  private readonly viewpoints: THREE.Vector3[] = []
+  protected readonly ray = new THREE.Raycaster()
+  private readonly viewpoints: THREE.Vector3[]
+  private readonly sightRange: number
+  /** The player has walked up to a boundary that has a legal reason behind it. */
+  protected onEdge: (() => void) | null = null
 
   readonly root: THREE.Object3D
 
-  constructor(root: THREE.Object3D) {
+  constructor(root: THREE.Object3D, options: RoomQueryOptions = CLASSROOM_OPTIONS) {
     this.root = root
+    this.sightRange = options.sightRange ?? Infinity
+    if (options.floor) this.floor.copy(options.floor)
     root.updateWorldMatrix(true, true)
     root.traverse((o) => {
       if (!(o instanceof THREE.Mesh)) return
+      options.prepare?.(o)
       const name = (o.material as THREE.Material).name
-      if (name === 'FloorMat') this.floor.expandByObject(o)
+      if (name === options.floorMaterial) this.floor.expandByObject(o)
       if (!this.boxes.has(name)) this.boxes.set(name, new THREE.Box3())
       this.boxes.get(name)!.expandByObject(o)
-      if (IGNORED.has(name)) return
+      if (options.ignored.has(name)) return
       this.occluders.push(o)
-      if (!WALK_THROUGH.has(name)) this.solids.push(o)
+      if (!options.walkThrough.has(name)) this.solids.push(o)
     })
     // Sample eyes spread over the floor, used to judge what can be seen from where.
+    if (options.viewpoints) {
+      this.viewpoints = options.viewpoints
+      return
+    }
     const inset = 0.5
     const { min, max } = this.floor
+    this.viewpoints = []
     for (let i = 0; i < 4; i++) {
       for (let j = 0; j < 3; j++) {
         const x = THREE.MathUtils.lerp(min.x + inset, max.x - inset, i / 3)
@@ -49,6 +79,35 @@ export class RoomQueries {
         this.viewpoints.push(new THREE.Vector3(x, EYE_HEIGHT, z))
       }
     }
+  }
+
+  /** Height of the floor above y = 0 at this spot. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  floorAt(_x: number, _z: number): number {
+    return 0
+  }
+
+  /** Called with how far the player walked this frame. Returns the head's offset from its resting height. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  headBob(_walked: number): number {
+    return 0
+  }
+
+  /** What pressing E would do when no evidence is in the crosshair. */
+  contextPrompt(): string | null {
+    return null
+  }
+
+  contextAct() {}
+
+  /** True where the player is threading a gap too fine for the collision rays, like a train door. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected ignoresSolids(_pos: THREE.Vector3): boolean {
+    return false
+  }
+
+  setEdgeListener(listener: (() => void) | null) {
+    this.onEdge = listener
   }
 
   box(material: string): THREE.Box3 | undefined {
@@ -84,13 +143,14 @@ export class RoomQueries {
     const side = new THREE.Vector3()
     const free = (sx: number, sz: number) => {
       if (sx === 0 && sz === 0) return true
+      if (this.ignoresSolids(pos)) return true
       dir.set(sx, 0, sz).normalize()
       side.set(-dir.z, 0, dir.x)
       const reach = PLAYER_RADIUS + Math.hypot(sx, sz)
       // Several heights and a little to each side, so a desk with a gap under it still stops you.
       for (const h of PROBE_HEIGHTS) {
         for (const o of PROBE_SIDES) {
-          probe.set(pos.x + side.x * o, h, pos.z + side.z * o)
+          probe.set(pos.x + side.x * o, h + this.floorAt(pos.x, pos.z), pos.z + side.z * o)
           if (this.blocked(probe, dir, reach)) return false
         }
       }
@@ -136,17 +196,20 @@ export class RoomQueries {
     const target = p.clone()
     target.y += 0.06
     let hidden = 0
+    let eyes = 0
     const dir = new THREE.Vector3()
     for (const v of this.viewpoints) {
       dir.subVectors(target, v)
       const dist = dir.length()
+      if (dist > this.sightRange) continue
+      eyes++
       dir.normalize()
       this.ray.set(v, dir)
       this.ray.near = 0
       this.ray.far = dist - 0.1
       if (this.ray.intersectObjects(this.occluders, false).length > 0) hidden++
     }
-    let c = hidden / this.viewpoints.length
+    let c = eyes ? hidden / eyes : 1
     // Tucked under something counts for more than a clear sight line suggests.
     if (this.coveredAbove(p)) c = Math.min(1, c + 0.25)
     return Math.round(c * 100) / 100

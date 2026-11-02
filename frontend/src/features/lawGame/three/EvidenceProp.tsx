@@ -73,6 +73,66 @@ function Shape({ kind }: { kind: EvidenceKind }) {
           </mesh>
         </group>
       )
+    case 'cable':
+      return (
+        <group>
+          {[0, 1, 2].map((i) => (
+            <mesh key={i} position={[0, 0.018 + i * 0.026, 0]} rotation={[Math.PI / 2, 0, i * 0.5]} castShadow>
+              <torusGeometry args={[0.1 - i * 0.008, 0.014, 8, 24]} />
+              {std('#23262c', { roughness: 0.6 })}
+            </mesh>
+          ))}
+          <mesh position={[0.135, 0.02, 0.02]} rotation={[0, 0.3, Math.PI / 2]}>
+            <cylinderGeometry args={[0.009, 0.009, 0.09, 8]} />
+            {std('#d98a4a', { metalness: 0.9, roughness: 0.25, emissive: '#5a2c10' })}
+          </mesh>
+        </group>
+      )
+    case 'cutters':
+      return (
+        <group rotation={[0, 0.7, 0]}>
+          {[-1, 1].map((s) => (
+            <group key={s} rotation={[0, s * 0.14, 0]}>
+              <mesh position={[0, 0.014, 0.16]} castShadow>
+                <boxGeometry args={[0.022, 0.016, 0.32]} />
+                {std('#b3261e', { roughness: 0.5 })}
+              </mesh>
+              <mesh position={[0, 0.014, -0.05]} castShadow>
+                <boxGeometry args={[0.03, 0.02, 0.12]} />
+                {std('#6d7278', { metalness: 0.85, roughness: 0.35 })}
+              </mesh>
+            </group>
+          ))}
+        </group>
+      )
+    case 'pass':
+      return (
+        <group rotation={[0, -0.25, 0]}>
+          <mesh position={[0, 0.003, 0]} castShadow>
+            <boxGeometry args={[0.13, 0.004, 0.08]} />
+            {std('#f0d48a', { roughness: 0.9 })}
+          </mesh>
+          <mesh position={[0.02, 0.0055, 0.012]}>
+            <boxGeometry args={[0.07, 0.001, 0.018]} />
+            {std('#3a3a44', { roughness: 0.95 })}
+          </mesh>
+        </group>
+      )
+    case 'tiffin':
+      return (
+        <group>
+          {[0, 1, 2].map((i) => (
+            <mesh key={i} position={[0, 0.038 + i * 0.07, 0]} castShadow>
+              <cylinderGeometry args={[0.07, 0.07, 0.066, 20]} />
+              {std('#aeb5bd', { metalness: 0.85, roughness: 0.32 })}
+            </mesh>
+          ))}
+          <mesh position={[0, 0.235, 0]} rotation={[0, 0, 0]}>
+            <torusGeometry args={[0.045, 0.006, 8, 18, Math.PI]} />
+            {std('#7d848c', { metalness: 0.8, roughness: 0.4 })}
+          </mesh>
+        </group>
+      )
     case 'receipt':
       return (
         <mesh position={[0, 0.003, 0]} rotation={[0, 0.2, 0]}>

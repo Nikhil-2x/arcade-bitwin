@@ -28,7 +28,7 @@ export function CharacterSelect() {
       </div>
       <div className="lg-foot">
         <button className="lg-btn" disabled={!pick} onClick={() => pick && selectCharacter(pick)}>
-          Enter the classroom
+          {theCase.copy.enterScene}
         </button>
       </div>
     </div>

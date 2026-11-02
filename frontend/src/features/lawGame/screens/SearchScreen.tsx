@@ -4,6 +4,10 @@ import { useLawGame } from '../store/useLawGame.ts'
 import { RoomScene, type Vec3 } from '../three/RoomScene.tsx'
 import { LawNote } from '../ui/LawNote.tsx'
 import { SceneLoader } from '../ui/SceneLoader.tsx'
+import { EdgeNote } from '../ui/EdgeNote.tsx'
+import { useEdgeNote } from '../ui/useEdgeNote.ts'
+import { SpeechBubble } from '../ui/SpeechBubble.tsx'
+import { useSpeech } from '../ui/useSpeech.ts'
 import { clock, useCountdown } from '../ui/useCountdown.ts'
 
 /** The detective walks the same classroom and collects whatever was left behind. */
@@ -18,6 +22,8 @@ export function SearchScreen() {
   const finished = useRef(false)
   const used = useRef(0)
   const collectedRef = useRef<string[]>([])
+  const edge = useEdgeNote()
+  const speech = useSpeech()
 
   const placed = useMemo(() => {
     const m: Record<string, Vec3> = {}
@@ -65,6 +71,9 @@ export function SearchScreen() {
       <div className="lg-canvas">
         <RoomScene
           mode="search"
+          scene={theCase.scene}
+          onEdge={edge.trigger}
+          onSpeech={speech.say}
           evidences={theCase.evidences}
           placed={placed}
           collected={collected}
@@ -107,11 +116,19 @@ export function SearchScreen() {
             />
           </div>
         )}
+        {!showLaw && edge.show && <EdgeNote law={theCase.edgeLaw} />}
+        {speech.current && <SpeechBubble speech={speech.current} />}
         <div className="lg-help">
           <kbd>W</kbd>
           <kbd>A</kbd>
           <kbd>S</kbd>
-          <kbd>D</kbd> move &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>E</kbd> collect &nbsp; <kbd>Esc</kbd> free the mouse
+          <kbd>D</kbd> move &nbsp; <kbd>Shift</kbd> run &nbsp; <kbd>Mouse</kbd> look &nbsp; <kbd>E</kbd> collect &nbsp;{' '}
+          {theCase.copy.extraControls?.map(([key, action]) => (
+            <span key={key}>
+              <kbd>{key}</kbd> {action} &nbsp;{' '}
+            </span>
+          ))}
+          <kbd>Esc</kbd> free the mouse
         </div>
         <button className="lg-btn lg-done" onClick={finish} disabled={!ready}>
           {collected.length === total ? 'Sort the evidence' : 'Stop searching'} <span className="lg-dim">(Enter)</span>
@@ -120,8 +137,9 @@ export function SearchScreen() {
           <div className="lg-lock" onClick={() => document.querySelector<HTMLCanvasElement>('.lg-canvas canvas')?.requestPointerLock()}>
             <h2>Click to enter the scene</h2>
             <p className="lg-dim">
-              {total} items were left in the room. Some matter, some do not. Find them all, then you will sort them.
+              {total} items were left in the {theCase.copy.sceneNoun}. Some matter, some do not. Find them all, then you will sort them.
             </p>
+            {theCase.copy.sceneTip && <p className="lg-dim">{theCase.copy.sceneTip}</p>}
           </div>
         )}
       </div>

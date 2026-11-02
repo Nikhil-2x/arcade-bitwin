@@ -12,25 +12,25 @@ const TRESPASS: LawRef = {
   title: 'Criminal trespass',
   summary: 'Entering property to commit an offence, or to intimidate or annoy, is criminal trespass.',
 }
-const SCREEN_EVIDENCE: LawRef = {
+export const SCREEN_EVIDENCE: LawRef = {
   act: 'Bharatiya Nyaya Sanhita, 2023',
   section: 'Section 238',
   title: 'Causing disappearance of evidence',
   summary: 'Destroying, hiding or moving evidence to shield an offender is itself an offence.',
 }
-const FORENSIC: LawRef = {
+export const FORENSIC: LawRef = {
   act: 'Bharatiya Nagarik Suraksha Sanhita, 2023',
   section: 'Section 176',
   title: 'Investigation and forensic visit',
   summary: 'For serious offences a forensic expert must visit the scene to collect evidence, so the scene must stay untouched.',
 }
-const RELEVANCE: LawRef = {
+export const RELEVANCE: LawRef = {
   act: 'Bharatiya Sakshya Adhiniyam, 2023',
   section: 'Section 3',
   title: 'Facts in issue and relevant facts',
   summary: 'Only facts that are in issue, or relevant to them, may be proved in court.',
 }
-const ELECTRONIC: LawRef = {
+export const ELECTRONIC: LawRef = {
   act: 'Bharatiya Sakshya Adhiniyam, 2023',
   section: 'Section 63',
   title: 'Electronic records as evidence',
@@ -39,6 +39,14 @@ const ELECTRONIC: LawRef = {
 
 export const CASE_1: LawCase = {
   level: 1,
+  scene: 'classroom',
+  copy: {
+    sceneNoun: 'room',
+    enterScene: 'Enter the classroom',
+    loading: 'Opening the classroom',
+    alibiQuestion: 'Where were you between 4:30 and 7:15 PM? Name a place, a time and someone who saw you.',
+    alibiPlaceholder: 'I was in the…',
+  },
   title: 'The Missing Question Paper',
   place: 'Greenfield Public School, Room 10-B',
   tagline: 'A sealed exam paper has vanished the night before the test.',
