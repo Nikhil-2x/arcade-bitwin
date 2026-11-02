@@ -30,7 +30,7 @@ export class BriefScene extends Phaser.Scene {
     this.cameras.main.fadeIn(400, 7, 9, 20)
     backdrop(this)
     this.add.rectangle(0, 0, 1280, 720, COLORS.bg, 0.55).setOrigin(0)
-    frame(this, `NIGHT 0${def.id} / 03`, `${def.place}  /  ${def.time}S`.toUpperCase())
+    frame(this, `NIGHT 0${def.id} / 0${Object.keys(LEVELS).length}`, `${def.place}  /  ${def.time}S`.toUpperCase())
 
     display(this, 640, 30, def.title.toUpperCase(), 44, hex(COLORS.amber)).setOrigin(0.5, 0)
     text(this, 640, 92, def.tone, 15, hex(COLORS.muted)).setOrigin(0.5, 0)

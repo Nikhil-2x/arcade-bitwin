@@ -381,7 +381,7 @@ export class BarrierAI {
     if (ok('fakeMsg') && !hidden && battery > 0 && now - this.lastFakeMsgAt > 16) {
       let w = 2.2
       if (progress > 0.3 && progress < 0.75) w += 1.8 // Interrupt mid-run
-      if (h.def.id === 3) w += 1.0 // Code call in L3 is high stakes
+      if (h.def.id === 3 || h.def.id === 4) w += 1.0 // High stakes night
       scores.push({ id: 'fakeMsg', x: px, y: py, weight: w })
     }
 

@@ -33,7 +33,7 @@ export class MenuScene extends Phaser.Scene {
     soundToggle(this, W - 40, H - 52)
 
     this.sign()
-    text(this, LEFT, 330, 'Three nights. One way home.\nNobody should walk it alone.', 21, hex(COLORS.paper), { lineSpacing: 8 }).setDepth(3)
+    text(this, LEFT, 330, 'Four nights. One way home.\nNobody should walk it alone.', 21, hex(COLORS.paper), { lineSpacing: 8 }).setDepth(3)
     this.nights()
     this.modes()
 
@@ -94,19 +94,21 @@ export class MenuScene extends Phaser.Scene {
   private nights() {
     const y = 470
     const x0 = LEFT + 10
-    const gap = 200
+    const levelIds = [1, 2, 3, 4] as LevelId[]
+    const count = levelIds.length
+    const gap = count > 3 ? 140 : 200
     const g = this.add.graphics().setDepth(3)
-    g.lineStyle(2, COLORS.panelEdge, 1).lineBetween(x0, y, x0 + gap * 2, y)
-    display(this, LEFT, y - 56, 'THREE NIGHTS', 12, hex(COLORS.muted)).setDepth(3)
+    g.lineStyle(2, COLORS.panelEdge, 1).lineBetween(x0, y, x0 + gap * (count - 1), y)
+    display(this, LEFT, y - 56, `${count} NIGHTS`.toUpperCase(), 12, hex(COLORS.muted)).setDepth(3)
     const info = text(this, LEFT, y + 74, '', 15, hex(COLORS.paper), { wordWrap: { width: 520 } }).setDepth(3)
-    ;([1, 2, 3] as LevelId[]).forEach((id, i) => {
+    levelIds.forEach((id, i) => {
       const def = LEVELS[id]
       const nx = x0 + i * gap
       const halo = this.add.circle(nx, y, 22, COLORS.amber, 0.18).setDepth(3).setScale(0)
       const node = this.add.circle(nx, y, 8, COLORS.bg).setStrokeStyle(2, COLORS.amber).setDepth(3)
       display(this, nx, y - 30, `0${id}`, 14, hex(COLORS.amber)).setOrigin(0.5).setDepth(3)
-      const name = text(this, nx, y + 22, def.title, 15, hex(COLORS.muted)).setOrigin(0.5, 0).setDepth(3)
-      const hit = this.add.zone(nx, y + 10, 180, 80).setInteractive({ useHandCursor: true }).setDepth(5)
+      const name = text(this, nx, y + 22, def.title, 13, hex(COLORS.muted)).setOrigin(0.5, 0).setDepth(3)
+      const hit = this.add.zone(nx, y + 10, gap, 80).setInteractive({ useHandCursor: true }).setDepth(5)
       hit.on('pointerover', () => {
         Sfx.hover()
         node.setFillStyle(COLORS.amber)

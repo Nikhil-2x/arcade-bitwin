@@ -30,7 +30,7 @@ export class LevelResultScene extends Phaser.Scene {
     this.cameras.main.fadeIn(300, 7, 9, 20)
     backdrop(this)
     this.add.rectangle(0, 0, 1280, 720, COLORS.bg, 0.6).setOrigin(0)
-    frame(this, `NIGHT 0${level} / 03`, 'LEVEL RESULT')
+    frame(this, `NIGHT 0${level} / 0${Object.keys(LEVELS).length}`, 'LEVEL RESULT')
     display(this, 640, 34, `${def.title.toUpperCase()}  /  LEVEL RESULT`, 14, hex(COLORS.muted)).setOrigin(0.5, 0)
 
     const tie = scores[0] === scores[1]
@@ -51,7 +51,7 @@ export class LevelResultScene extends Phaser.Scene {
       const rows: [string, number][] = []
       if (!solo || p === 0) rows.push(['As Priya (Runner)', t.runner[p]])
       if (!solo || p === 1) rows.push(['As the Barrier', t.barrier[p]])
-      if (level === 3 && (!solo || p === 0)) rows.push(['Bystander bonus', t.bystander[p]])
+      if ((level === 3 || level === 4) && (!solo || p === 0)) rows.push(['Bystander bonus', t.bystander[p]])
       rows.forEach(([label, v], i) => {
         const y = 300 + i * 40
         text(this, x + 34, y, label, 18, hex(COLORS.paper))
@@ -70,7 +70,7 @@ export class LevelResultScene extends Phaser.Scene {
     if (solo) text(this, 640, 548, 'Your Runner score against the AI Barrier score for this level.', 15, hex(COLORS.muted)).setOrigin(0.5, 0)
     else text(this, 640, 548, 'Each total adds what that player scored as Priya and as the Barrier.', 15, hex(COLORS.muted)).setOrigin(0.5, 0)
 
-    const last = level === 3
+    const last = level === 3 || level === 4
     const b = button(this, 640, 630, 360, 56, last ? 'SEE THE ENDING' : 'CHOOSE ANOTHER LEVEL', Net.shared(this, 'go', () => this.go(last ? 'Ending' : 'LevelSelect')), COLORS.amber, 18)
     this.input.keyboard?.once('keydown-SPACE', () => b.container.emit('pointerdown'))
   }

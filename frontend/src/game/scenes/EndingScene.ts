@@ -18,7 +18,7 @@ const ENDINGS: Record<EndingKey, { title: string; line: string; color: number; g
 
 export function endingFor(p: PlayerRecord): EndingKey {
   const s = p.story
-  if (s.won[3]) return s.networkScore >= 4 && s.reportedLight && s.wrongCalls <= 2 ? 'circle' : 'alone'
+  if (s.won[4] || s.won[3]) return s.networkScore >= 4 && s.reportedLight && s.wrongCalls <= 2 ? 'circle' : 'alone'
   if (p.l3Correct >= 2 && p.l3Allies >= 1) return 'help'
   return 'silence'
 }
