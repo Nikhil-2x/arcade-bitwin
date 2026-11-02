@@ -108,6 +108,7 @@ function Rig({ q, spawn, paused, onLockChange }: { q: RoomQueries; spawn: SpawnP
     camera.position.copy(pos)
     camera.position.setY(pos.y + q.floorAt(pos.x, pos.z) + q.headBob(walked))
     camera.rotation.set(pitch.current, yaw.current, 0, 'YXZ')
+    q.adjustCamera(camera)
   })
   return null
 }

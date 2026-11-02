@@ -11,7 +11,7 @@ export function CharacterSelect() {
     <div className="lg-screen">
       <div className="lg-head">
         <span className="lg-kicker">{PLAYER_NAMES[criminal()]} · Obstructor</span>
-        <h1>Who are you tonight?</h1>
+        <h1>{theCase.copy.chooseTitle ?? 'Who are you tonight?'}</h1>
         <p className="lg-dim" style={{ margin: '6px 0 0' }}>
           You are the culprit. Choose the character you will play. The other three become NPCs and will tell the detective their own stories.
         </p>

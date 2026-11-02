@@ -106,6 +106,16 @@ export class RoomQueries {
     return false
   }
 
+  /** False where the ground itself forbids this step, for worlds whose boundary is not a mesh. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  protected canStep(_pos: THREE.Vector3, _dx: number, _dz: number): boolean {
+    return true
+  }
+
+  /** The last word on the camera each frame, for a world that takes it over for a moment. */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  adjustCamera(_camera: THREE.Camera) {}
+
   setEdgeListener(listener: (() => void) | null) {
     this.onEdge = listener
   }
@@ -143,6 +153,7 @@ export class RoomQueries {
     const side = new THREE.Vector3()
     const free = (sx: number, sz: number) => {
       if (sx === 0 && sz === 0) return true
+      if (!this.canStep(pos, sx, sz)) return false
       if (this.ignoresSolids(pos)) return true
       dir.set(sx, 0, sz).normalize()
       side.set(-dir.z, 0, dir.x)

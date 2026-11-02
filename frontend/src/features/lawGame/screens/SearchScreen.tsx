@@ -1,7 +1,10 @@
+import { AnimatePresence } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PLAYER_NAMES } from '../config.ts'
 import { useLawGame } from '../store/useLawGame.ts'
 import { RoomScene, type Vec3 } from '../three/RoomScene.tsx'
+import { ArrivalCard } from '../ui/ArrivalCard.tsx'
+import { HudToast } from '../ui/HudToast.tsx'
 import { LawNote } from '../ui/LawNote.tsx'
 import { SceneLoader } from '../ui/SceneLoader.tsx'
 import { EdgeNote } from '../ui/EdgeNote.tsx'
@@ -103,8 +106,9 @@ export function SearchScreen() {
 
         <div className="lg-cross" />
         {prompt && <div className="lg-prompt">{prompt}</div>}
+        <AnimatePresence>
         {showLaw && (
-          <div className="lg-toast">
+          <HudToast key="law">
             <LawNote
               label="At a real scene"
               law={{
@@ -114,10 +118,12 @@ export function SearchScreen() {
                 summary: 'Real evidence is collected by trained officers and forensic experts, wearing gloves and logging every item. Members of the public should not touch anything.',
               }}
             />
-          </div>
+          </HudToast>
         )}
-        {!showLaw && edge.show && <EdgeNote law={theCase.edgeLaw} />}
-        {speech.current && <SpeechBubble speech={speech.current} />}
+        {!showLaw && edge.show && <EdgeNote key="edge" law={theCase.edgeLaw} label={theCase.copy.edgeLabel} />}
+        </AnimatePresence>
+        <AnimatePresence>{speech.current && <SpeechBubble key={speech.current.text} speech={speech.current} />}</AnimatePresence>
+        <ArrivalCard started={started} />
         <div className="lg-help">
           <kbd>W</kbd>
           <kbd>A</kbd>

@@ -1,3 +1,4 @@
+import { MotionConfig, motion } from 'motion/react'
 import { Link } from 'react-router'
 import { LAW_CASES } from '../data/cases.ts'
 import '../law-game.css'
@@ -89,12 +90,62 @@ function RailwayArt() {
   )
 }
 
-const ART: Record<SceneId, () => React.JSX.Element> = { classroom: ClassroomArt, railway: RailwayArt }
+const SWELL = 'M-40 8q20-10 40 0t40 0 40 0 40 0 40 0 40 0 40 0 40 0 40 0 40 0V40H-40z'
+
+/** Bright morning on the sand: the sea rolls in, a ball bounces, and a turtle heads for the water. */
+function BeachArt() {
+  return (
+    <svg viewBox="0 0 320 170" aria-hidden className="lg-lv-svg">
+      <defs>
+        <linearGradient id="lg-lv-day" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor="#3c9bdc" />
+          <stop offset="100%" stopColor="#c8ebf6" />
+        </linearGradient>
+      </defs>
+      <rect width="320" height="92" fill="url(#lg-lv-day)" />
+      <motion.circle
+        cx="258"
+        cy="34"
+        r="17"
+        fill="#fff3bf"
+        animate={{ opacity: [0.85, 1, 0.85] }}
+        transition={{ duration: 4, ease: 'easeInOut', repeat: Infinity }}
+      />
+      <rect y="86" width="320" height="30" fill="#158aa6" />
+      <g transform="translate(0 92)"><motion.path d={SWELL} fill="#2bb3c2" animate={{ x: [0, -40] }} transition={{ duration: 5, ease: 'linear', repeat: Infinity }} /></g>
+      <g transform="translate(0 103)"><motion.path d={SWELL} fill="#6fd8d2" animate={{ x: [-40, 0] }} transition={{ duration: 3.6, ease: 'linear', repeat: Infinity }} /></g>
+      <g transform="translate(0 113)"><motion.path d={SWELL} fill="#eefbf7" animate={{ x: [0, -40] }} transition={{ duration: 2.8, ease: 'linear', repeat: Infinity }} /></g>
+      <path d="M0 124q80-8 160-2t160-4v52H0z" fill="#efd9a4" />
+      {/* A parasol and a lounger. */}
+      <path d="M254 88v62" stroke="#7a5636" strokeWidth="3" />
+      <path d="M218 96q36-36 72 0z" fill="#ec6a5c" />
+      <path d="M242 96q12-36 24 0z" fill="#f2efe6" />
+      <path d="M212 148l32-4 14-11" stroke="#3fa7c9" strokeWidth="5" fill="none" strokeLinecap="round" />
+      {/* The ball. */}
+      <motion.g animate={{ y: [0, -38, 0] }} transition={{ duration: 1.1, ease: ['easeOut', 'easeIn'], repeat: Infinity }}>
+        <circle cx="60" cy="140" r="11" fill="#f2efe6" />
+        <path d="M60 129a11 11 0 0 1 0 22z" fill="#ec6a5c" />
+        <path d="M60 129a11 11 0 0 0-8 18z" fill="#3fa7c9" />
+      </motion.g>
+      <ellipse cx="60" cy="153" rx="11" ry="2.5" fill="#b89a60" />
+      {/* The turtle, going home. */}
+      <motion.g animate={{ x: [0, 16, 16, 0], y: [0, -10, -10, 0], opacity: [1, 1, 0, 0] }} transition={{ duration: 9, times: [0, 0.7, 0.85, 1], ease: 'linear', repeat: Infinity }}>
+        <ellipse cx="144" cy="146" rx="14" ry="9" fill="#3f7d5a" />
+        <ellipse cx="144" cy="146" rx="9" ry="5.6" fill="#2d6245" />
+        <circle cx="157" cy="139" r="4" fill="#5fa377" />
+        <path d="M134 139l-7-5M154 151l6 5M134 153l-7 5" stroke="#5fa377" strokeWidth="3.4" strokeLinecap="round" />
+      </motion.g>
+    </svg>
+  )
+}
+
+const ART: Record<SceneId, () => React.JSX.Element> = { classroom: ClassroomArt, railway: RailwayArt, beach: BeachArt }
 
 /** What each case teaches, in words a player will recognise. */
 const TEACHES: Record<SceneId, string> = {
   classroom: 'Theft, trespass and exam leaks, and how evidence stands up in court.',
   railway: 'The Railways Act: trespass, signal tampering, damage to railway property and the alarm chain.',
+  beach: 'The Wild Life Act: protected turtles, nests and eggs, illegal trade, and safety on the shore.',
 }
 
 const TAPE = 'CRIME SCENE  DO NOT CROSS  '.repeat(14)
@@ -102,52 +153,66 @@ const TAPE = 'CRIME SCENE  DO NOT CROSS  '.repeat(14)
 /** The doorway to the law game. Loads no 3D at all, so it opens at once. */
 export default function LevelSelect() {
   return (
-    <div className="lg lg-lv">
-      <title>Crime Scene: Choose a Level</title>
-      <div className="lg-lv-tape one" aria-hidden>
-        <span>{TAPE}</span>
+    <MotionConfig reducedMotion="user">
+      <div className="lg lg-lv">
+        <title>Crime Scene: Choose a Level</title>
+        <div className="lg-lv-tape one" aria-hidden>
+          <span>{TAPE}</span>
+        </div>
+        <div className="lg-lv-tape two" aria-hidden>
+          <span>{TAPE}</span>
+        </div>
+
+        <Link to={LAW_PATHS.arcade} className="lg-btn small ghost lg-lv-back">
+          Back to arcade
+        </Link>
+
+        <header className="lg-lv-head">
+          <h1>Crime Scene: Know the Law</h1>
+          <p>Two players, one screen. Hide the evidence, hunt it down, then swap sides.</p>
+        </header>
+
+        <main className="lg-lv-cases" aria-label="Levels">
+          {LAW_CASES.map((c, i) => {
+            const Art = ART[c.scene]
+            return (
+              <motion.div
+                key={c.level}
+                className="lg-lv-slot"
+                initial={{ opacity: 0, transform: 'translateY(18px)' }}
+                animate={{ opacity: 1, transform: 'translateY(0px)' }}
+                transition={{ duration: 0.5, delay: 0.5 + i * 0.08, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <Link to={LAW_PATHS.level(c.level)} className={`lg-lv-case ${c.scene}`}>
+                  <div className="lg-lv-art">
+                    <Art />
+                    <span className="lg-lv-num">Level {c.level}</span>
+                  </div>
+                  <div className="lg-lv-body">
+                    <h2>{c.title}</h2>
+                    <p className="lg-lv-place">{c.place}</p>
+                    <p>{c.tagline}</p>
+                    <p className="lg-lv-learn">{TEACHES[c.scene]}</p>
+                  </div>
+                  <span className="lg-lv-go">Play level {c.level}</span>
+                </Link>
+              </motion.div>
+            )
+          })}
+        </main>
+
+        <footer className="lg-lv-credit">
+          Level 2 station model by{' '}
+          <a href="https://sketchfab.com/3d-models/railway-station-8dc6346464044ad3be71b47f072e4a34" target="_blank" rel="noreferrer">
+            Igor Tretyakov
+          </a>
+          , CC BY 4.0. Simplified for the web. Level 3 beach scan by{' '}
+          <a href="https://sketchfab.com/3d-models/karpen-albania-drone-3d-scan-dd0c6d2411f44352a3bff7ec45d57902" target="_blank" rel="noreferrer">
+            Sircher
+          </a>
+          , CC BY 4.0.
+        </footer>
       </div>
-      <div className="lg-lv-tape two" aria-hidden>
-        <span>{TAPE}</span>
-      </div>
-
-      <Link to={LAW_PATHS.arcade} className="lg-btn small ghost lg-lv-back">
-        Back to arcade
-      </Link>
-
-      <header className="lg-lv-head">
-        <h1>Crime Scene: Know the Law</h1>
-        <p>Two players, one screen. Hide the evidence, hunt it down, then swap sides.</p>
-      </header>
-
-      <main className="lg-lv-cases" aria-label="Levels">
-        {LAW_CASES.map((c, i) => {
-          const Art = ART[c.scene]
-          return (
-            <Link key={c.level} to={LAW_PATHS.level(c.level)} className={`lg-lv-case ${c.scene}`} style={{ animationDelay: `${650 + i * 160}ms` }}>
-              <div className="lg-lv-art">
-                <Art />
-                <span className="lg-lv-num">Level {c.level}</span>
-              </div>
-              <div className="lg-lv-body">
-                <h2>{c.title}</h2>
-                <p className="lg-lv-place">{c.place}</p>
-                <p>{c.tagline}</p>
-                <p className="lg-lv-learn">{TEACHES[c.scene]}</p>
-              </div>
-              <span className="lg-lv-go">Play level {c.level}</span>
-            </Link>
-          )
-        })}
-      </main>
-
-      <footer className="lg-lv-credit">
-        Level 2 station model by{' '}
-        <a href="https://sketchfab.com/3d-models/railway-station-8dc6346464044ad3be71b47f072e4a34" target="_blank" rel="noreferrer">
-          Igor Tretyakov
-        </a>
-        , CC BY 4.0. Simplified for the web.
-      </footer>
-    </div>
+    </MotionConfig>
   )
 }

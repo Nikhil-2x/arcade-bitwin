@@ -1,24 +1,12 @@
 import { useEffect, useRef } from 'react'
 import type { Speech } from '../../ui/useSpeech.ts'
+import { footstep, makeNoise } from '../audio.ts'
 import { ANNOUNCEMENTS } from './crowdData.ts'
 import type { RailwayQueries } from './RailwayQueries.ts'
 
 const MURMUR_GAIN = 0.035
 const FIRST_ANNOUNCEMENT_MS = 16000
 const ANNOUNCEMENT_EVERY_MS = 42000
-
-/** Everything is synthesised, so the station's sound costs no downloads. */
-function makeNoise(audio: AudioContext, seconds: number) {
-  const buffer = audio.createBuffer(1, audio.sampleRate * seconds, audio.sampleRate)
-  const data = buffer.getChannelData(0)
-  let last = 0
-  for (let i = 0; i < data.length; i++) {
-    // Brown noise: softer than white, closer to a distant crowd.
-    last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02
-    data[i] = last * 3.5
-  }
-  return buffer
-}
 
 function chime(audio: AudioContext, output: AudioNode) {
   // The two-note call that comes before every station announcement.
@@ -35,21 +23,6 @@ function chime(audio: AudioContext, output: AudioNode) {
     osc.start(at)
     osc.stop(at + 1.05)
   })
-}
-
-function footstep(audio: AudioContext, output: AudioNode, noise: AudioBuffer) {
-  const source = audio.createBufferSource()
-  source.buffer = noise
-  const filter = audio.createBiquadFilter()
-  filter.type = 'lowpass'
-  filter.frequency.value = 340 + Math.random() * 180
-  const gain = audio.createGain()
-  const at = audio.currentTime
-  gain.gain.setValueAtTime(0.24, at)
-  gain.gain.exponentialRampToValueAtTime(0.001, at + 0.11)
-  source.connect(filter).connect(gain).connect(output)
-  source.start(at, Math.random())
-  source.stop(at + 0.13)
 }
 
 /** Crowd murmur, footsteps and announcements. M mutes it; the subtitles stay either way. */

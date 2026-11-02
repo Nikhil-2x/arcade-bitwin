@@ -57,6 +57,16 @@ export const ENVIRONMENTS: Record<SceneId, EnvironmentMeta> = {
     reach: 3,
     placeExtra: 0,
   },
+  beach: {
+    load: () => import('./beach/beachEnvironment.ts'),
+    far: 1500,
+    background: '#8fd3f0',
+    dpr: [1, 1.5],
+    adaptive: true,
+    // As at the station, the walkable area has hard edges: nothing may be placed out of the detective's reach.
+    reach: 3,
+    placeExtra: 0,
+  },
 }
 
 const loaded = new Map<SceneId, Promise<LoadedEnvironment>>()

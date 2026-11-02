@@ -133,6 +133,86 @@ function Shape({ kind }: { kind: EvidenceKind }) {
           </mesh>
         </group>
       )
+    case 'sack':
+      return (
+        <group>
+          <mesh position={[0, 0.12, 0]} scale={[0.2, 0.13, 0.17]} castShadow>
+            <icosahedronGeometry args={[1, 1]} />
+            {std('#8a7248', { roughness: 1 })}
+          </mesh>
+          <mesh position={[0.02, 0.27, 0]}>
+            <cylinderGeometry args={[0.022, 0.06, 0.07, 8]} />
+            {std('#6e5a38', { roughness: 1 })}
+          </mesh>
+          {[[0.15, 0.1, 0.09], [-0.12, 0.08, 0.13], [0.03, 0.05, 0.17]].map(([x, y, z]) => (
+            <mesh key={x} position={[x, y, z]} scale={[1, 0.98, 1]}>
+              <sphereGeometry args={[0.035, 10, 8]} />
+              {std('#f4efe1', { roughness: 0.75 })}
+            </mesh>
+          ))}
+        </group>
+      )
+    case 'trowel':
+      return (
+        <group rotation={[0, 0.8, 0]}>
+          <mesh position={[0, 0.012, -0.08]} scale={[0.055, 0.008, 0.11]} castShadow>
+            <sphereGeometry args={[1, 12, 8]} />
+            {std('#9aa3ad', { metalness: 0.85, roughness: 0.4 })}
+          </mesh>
+          <mesh position={[0.005, 0.02, -0.11]} scale={[0.04, 0.008, 0.06]}>
+            <sphereGeometry args={[1, 10, 8]} />
+            {std('#4a3b26', { roughness: 1 })}
+          </mesh>
+          <mesh position={[0, 0.02, 0.09]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.018, 0.021, 0.14, 10]} />
+            {std('#2f7d4f')}
+          </mesh>
+        </group>
+      )
+    case 'padlock':
+      return (
+        <group rotation={[0, 0.4, 0]}>
+          <mesh position={[0, 0.022, 0]} castShadow>
+            <boxGeometry args={[0.075, 0.044, 0.05]} />
+            {std('#c9a24a', { metalness: 0.8, roughness: 0.35 })}
+          </mesh>
+          {/* The shackle, cut through and bent aside. */}
+          <mesh position={[0.012, 0.052, 0]} rotation={[0, 0, 0.5]}>
+            <torusGeometry args={[0.027, 0.0065, 8, 18, Math.PI * 0.72]} />
+            {std('#c7ccd2', { metalness: 0.9, roughness: 0.25 })}
+          </mesh>
+          <mesh position={[-0.02, 0.0225, 0.0255]}>
+            <boxGeometry args={[0.014, 0.014, 0.002]} />
+            {std('#2f7d4f')}
+          </mesh>
+        </group>
+      )
+    case 'sunscreen':
+      return (
+        <group rotation={[0, -0.6, Math.PI / 2 - 0.02]} position={[0, 0.033, 0]}>
+          <mesh castShadow>
+            <cylinderGeometry args={[0.03, 0.022, 0.13, 14]} />
+            {std('#f4a02e', { roughness: 0.45 })}
+          </mesh>
+          <mesh position={[0, 0.08, 0]}>
+            <cylinderGeometry args={[0.018, 0.022, 0.03, 12]} />
+            {std('#f2efe6')}
+          </mesh>
+        </group>
+      )
+    case 'flipflop':
+      return (
+        <group rotation={[0, 0.7, 0]}>
+          <mesh position={[0, 0.007, 0]} scale={[0.05, 0.007, 0.105]} castShadow>
+            <sphereGeometry args={[1, 14, 8]} />
+            {std('#f08fb0', { roughness: 0.8 })}
+          </mesh>
+          <mesh position={[0, 0.024, -0.02]} rotation={[Math.PI / 2, 0, 0]} scale={[1, 1.2, 0.5]}>
+            <torusGeometry args={[0.032, 0.005, 6, 14, Math.PI]} />
+            {std('#d94e7f')}
+          </mesh>
+        </group>
+      )
     case 'receipt':
       return (
         <mesh position={[0, 0.003, 0]} rotation={[0, 0.2, 0]}>

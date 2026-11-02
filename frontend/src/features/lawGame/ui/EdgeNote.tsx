@@ -1,11 +1,12 @@
 import type { LawRef } from '../types.ts'
+import { HudToast } from './HudToast.tsx'
 import { LawNote } from './LawNote.tsx'
 
-export function EdgeNote({ law }: { law?: LawRef }) {
+export function EdgeNote({ law, label = 'Stay off the tracks' }: { law?: LawRef; label?: string }) {
   if (!law) return null
   return (
-    <div className="lg-toast">
-      <LawNote label="Stay off the tracks" law={law} />
-    </div>
+    <HudToast>
+      <LawNote label={label} law={law} />
+    </HudToast>
   )
 }

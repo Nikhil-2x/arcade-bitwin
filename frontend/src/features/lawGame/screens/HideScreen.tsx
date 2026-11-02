@@ -1,3 +1,4 @@
+import { AnimatePresence } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { PLAYER_NAMES } from '../config.ts'
@@ -5,6 +6,8 @@ import { useLawGame } from '../store/useLawGame.ts'
 import { RoomScene, type Vec3 } from '../three/RoomScene.tsx'
 import type { RoomQueries } from '../three/RoomQueries.ts'
 import type { Placement } from '../types.ts'
+import { ArrivalCard } from '../ui/ArrivalCard.tsx'
+import { HudToast } from '../ui/HudToast.tsx'
 import { LawNote } from '../ui/LawNote.tsx'
 import { SceneLoader } from '../ui/SceneLoader.tsx'
 import { EdgeNote } from '../ui/EdgeNote.tsx'
@@ -127,8 +130,9 @@ export function HideScreen() {
 
         <div className="lg-cross" />
         {prompt && <div className="lg-prompt">{prompt}</div>}
+        <AnimatePresence>
         {showLaw && (
-          <div className="lg-toast">
+          <HudToast key="law">
             <LawNote
               label="Reality check"
               law={{
@@ -138,10 +142,12 @@ export function HideScreen() {
                 summary: 'In real life, moving or hiding evidence to shield an offender is a crime. Here it is a game; at a real scene, touch nothing.',
               }}
             />
-          </div>
+          </HudToast>
         )}
-        {!showLaw && edge.show && <EdgeNote law={theCase.edgeLaw} />}
-        {speech.current && <SpeechBubble speech={speech.current} />}
+        {!showLaw && edge.show && <EdgeNote key="edge" law={theCase.edgeLaw} label={theCase.copy.edgeLabel} />}
+        </AnimatePresence>
+        <AnimatePresence>{speech.current && <SpeechBubble key={speech.current.text} speech={speech.current} />}</AnimatePresence>
+        <ArrivalCard started={started} />
         <div className="lg-help">
           <kbd>W</kbd>
           <kbd>A</kbd>

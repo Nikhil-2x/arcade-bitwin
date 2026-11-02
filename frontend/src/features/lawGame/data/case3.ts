@@ -1,0 +1,265 @@
+import type { LawCase, LawRef } from '../types.ts'
+import { ELECTRONIC, FORENSIC, RELEVANCE, SCREEN_EVIDENCE, TRESPASS } from './case1.ts'
+
+const WILDLIFE_ACT = 'Wild Life (Protection) Act, 1972'
+
+const HUNTING: LawRef = {
+  act: WILDLIFE_ACT,
+  section: 'Section 9',
+  title: 'No hunting of scheduled animals',
+  summary: 'Hunting scheduled wild animals is banned. For reptiles such as sea turtles, the Act counts damaging their eggs or disturbing their eggs or nests as hunting.',
+}
+const PENALTY: LawRef = {
+  act: WILDLIFE_ACT,
+  section: 'Section 51',
+  title: 'Penalties for wildlife offences',
+  summary: 'The olive ridley sea turtle is a Schedule I animal. Offences involving Schedule I animals can mean at least three and up to seven years in prison, plus a fine.',
+}
+const GOVERNMENT_PROPERTY: LawRef = {
+  act: WILDLIFE_ACT,
+  section: 'Section 39',
+  title: 'Illegally taken wildlife is government property',
+  summary: 'Wild animals hunted or taken illegally, and anything from them, belong to the government. Nobody may keep them without permission, even if they only found them.',
+}
+const TRADE: LawRef = {
+  act: WILDLIFE_ACT,
+  section: 'Section 49B',
+  title: 'No trade in scheduled wildlife',
+  summary: 'Dealing in articles taken from scheduled animals is banned. Buying from a poacher, or arranging the sale, is an offence too.',
+}
+const COAST: LawRef = {
+  act: 'Environment (Protection) Act, 1986',
+  section: 'Section 3',
+  title: 'Coastal Regulation Zone rules',
+  summary: 'Coastal Regulation Zone rules made under this Act control what may be done along the shore, and they protect sensitive stretches of coast, including turtle nesting beaches.',
+}
+const MISCHIEF: LawRef = {
+  act: 'Bharatiya Nyaya Sanhita, 2023',
+  section: 'Section 324',
+  title: 'Mischief',
+  summary: 'Deliberately destroying or damaging property so as to cause loss to its owner or the public, like cutting open a protected enclosure, is an offence.',
+}
+const ENDANGERING: LawRef = {
+  act: 'Bharatiya Nyaya Sanhita, 2023',
+  section: 'Section 125',
+  title: 'Endangering life or safety',
+  summary: 'Acting so rashly or negligently that you endanger someone’s life or safety is an offence. Respect the flags and lifeguards: a rescue puts other people at risk too.',
+}
+const RASH_BOATING: LawRef = {
+  act: 'Bharatiya Nyaya Sanhita, 2023',
+  section: 'Section 282',
+  title: 'Rash navigation of a vessel',
+  summary: 'Steering any boat so rashly or negligently that it endangers human life, like speeding through swimmers, is an offence.',
+}
+const REPORTING: LawRef = {
+  act: 'Bharatiya Nagarik Suraksha Sanhita, 2023',
+  section: 'Section 173',
+  title: 'Information in cognizable cases',
+  summary: 'Anyone can report a cognizable offence to the police, in person or electronically. Call the emergency number 112, or the local forest department for wildlife.',
+}
+
+export const CASE_3: LawCase = {
+  level: 3,
+  scene: 'beach',
+  copy: {
+    sceneNoun: 'beach',
+    enterScene: 'Step onto the beach',
+    loading: 'Flying in over the bay',
+    alibiQuestion: 'Where were you between 3:30 and 5:10 AM? Name a place, a time and someone who saw you.',
+    alibiPlaceholder: 'I was at the…',
+    sceneTip: 'The beach is packed. Talk to anyone you meet, and try kicking the beach ball.',
+    extraControls: [
+      ['E', 'talk'],
+      ['M', 'mute'],
+    ],
+    chooseTitle: 'Who are you today?',
+    edgeLabel: 'Mind the red flags',
+    arrival: { title: 'Coral Cove Beach Club', subtitle: 'Sunday morning, and nobody here knows yet' },
+  },
+  edgeLaw: ENDANGERING,
+  witnessWords: ['lifeguard', 'volunteer', 'fisher', 'guest', 'tourist', 'waiter', 'patrol', 'forest', 'boatman', 'neighbour', 'owner'],
+  title: 'The Empty Nest',
+  place: 'Coral Cove Beach Club, Konkan coast',
+  tagline: 'A protected turtle nest is dug out before dawn, under a beach full of holidaymakers.',
+  timing: { hide: 150, statement: 75, search: 300, bifurcate: 150 },
+  placeWords: ['deck', 'bar', 'shack', 'kitchen', 'jetty', 'boat', 'kayak', 'tower', 'parasol', 'boardwalk', 'lagoon', 'restaurant', 'hatchery', 'lawn', 'plaza', 'beach', 'shore', 'rocks', 'breakwater', 'home', 'room'],
+  beats: [
+    {
+      kicker: 'Saturday, 11:00 PM',
+      title: 'One hundred and twelve eggs',
+      text: 'An olive ridley sea turtle hauls herself up the sand at Coral Cove and lays her clutch. Volunteers fence off the nest in a small hatchery, padlock the gate and write the count in their log.',
+      mood: 'night',
+    },
+    {
+      kicker: 'Sunday, 5:10 AM',
+      title: 'The sand has been turned over',
+      text: 'On the dawn patrol, a volunteer finds the padlock cut and the nest dug out. Not one egg is left. In law, that is hunting a Schedule I animal, as serious as harming the turtle herself.',
+      mood: 'alarm',
+      law: HUNTING,
+    },
+    {
+      kicker: 'Sunday, 9:30 AM',
+      title: 'Business as usual',
+      text: 'The sun is up and the beach fills with swimmers, volleyball and music. Few people know a crime scene lies at the end of the sand. The forest department is on its way, but the eggs could be sold by nightfall.',
+      mood: 'shore',
+      law: REPORTING,
+    },
+    {
+      kicker: 'The suspects',
+      title: 'Four people had the run of the beach',
+      text: 'A boat operator, a shack owner, a lifeguard and a hatchery volunteer. Each says they are innocent. One of them is lying, and has had all morning to tidy the beach.',
+      mood: 'shore',
+      lineup: true,
+    },
+    {
+      kicker: 'Your roles',
+      title: 'Hide the truth. Find the truth.',
+      text: 'The Obstructor picks a suspect, hides the evidence around the beach and writes a convincing alibi. The Detective searches the shore, sorts clues from noise and names the culprit. Then you swap. In real life, hiding evidence is a crime: this is a game about knowing why.',
+      mood: 'alarm',
+      law: SCREEN_EVIDENCE,
+    },
+  ],
+  suspects: [
+    {
+      id: 'dev',
+      name: 'Dev Naik',
+      role: 'Boat operator',
+      age: 41,
+      skin: '#a86f4c',
+      hair: '#171717',
+      shirt: '#2f6f9e',
+      hairStyle: 2,
+      profile: 'Runs kayak hire and boat trips from the jetty. Can reach any cove in the dark, and knows the buyers in every harbour.',
+      statement: 'I was asleep on my boat at the jetty until about 5 AM, then I went to check the kayaks. The fisherman who moors beside me saw me at 5:05.',
+    },
+    {
+      id: 'rosa',
+      name: 'Rosa Fernandes',
+      role: 'Beach shack owner',
+      age: 47,
+      skin: '#d6a07a',
+      hair: '#2a1a14',
+      shirt: '#c9503f',
+      hairStyle: 1,
+      profile: 'Owns the bar on the plaza. Opens early, closes late, and has been complaining that the hatchery fence blocks her sunbeds.',
+      statement: 'I closed the bar at 2 AM and slept in the room behind the kitchen. My delivery driver woke me at 4:45 with the fish, and we unloaded together at the shack.',
+    },
+    {
+      id: 'imran',
+      name: 'Imran Shaikh',
+      role: 'Lifeguard',
+      age: 26,
+      skin: '#c68a62',
+      hair: '#1d1612',
+      shirt: '#d8452e',
+      hairStyle: 0,
+      profile: 'Starts before anyone else and carries the keys to the lifeguard tower. Saving for a motorbike, and not shy about saying so.',
+      statement: 'I was at home until 4:50 AM, then I rode to the beach and opened the lifeguard tower at 5:15. My neighbour saw me leave, and the patrol volunteer saw me arrive.',
+    },
+    {
+      id: 'priya',
+      name: 'Priya Kamat',
+      role: 'Hatchery volunteer',
+      age: 22,
+      skin: '#e0ac86',
+      hair: '#3a2a22',
+      shirt: '#4a8a5a',
+      hairStyle: 3,
+      profile: 'Wrote the egg count in the log, holds a spare key to the padlock, and found the empty nest. Knows exactly where every nest is.',
+      statement: 'I did the 11 PM count, went to the volunteers’ room and slept until the dawn patrol. I left at 4:55 AM with another volunteer and we found the nest together at 5:10.',
+    },
+  ],
+  evidences: [
+    {
+      id: 'sack',
+      name: 'Damp sack of turtle eggs',
+      kind: 'sack',
+      relevant: true,
+      description: 'A wet jute sack, tied shut, with round white eggs bulging through the weave and sand in every fold.',
+      precautions: [
+        'Do not open it, move it or try to rebury the eggs yourself. They are very easily killed by handling.',
+        'Keep it out of direct sun if you can do so without touching it, and keep people away.',
+        'Call the forest department or 112 at once: trained staff may still be able to save the eggs.',
+      ],
+      laws: [HUNTING, GOVERNMENT_PROPERTY, PENALTY],
+      connection: 'The sand in the sack matches the hatchery, and the egg count is close to the 112 written in the log. These are the stolen eggs.',
+      deskOffset: [-0.5, 0.12],
+    },
+    {
+      id: 'trowel',
+      name: 'Garden trowel with wet sand',
+      kind: 'trowel',
+      relevant: true,
+      description: 'A short steel trowel with a green handle, its blade crusted with damp, dark sand from deep in a nest.',
+      precautions: [
+        'Do not pick it up: the handle may hold fingerprints.',
+        'Do not rinse it, or brush off the sand.',
+        'Note where it lies, and let the investigators collect it.',
+      ],
+      laws: [HUNTING, COAST],
+      connection: 'The dark sand on the blade only comes from a metre down, the depth of a turtle nest. Nobody digs that deep to build a sandcastle.',
+      deskOffset: [0.05, -0.2],
+    },
+    {
+      id: 'phone',
+      name: 'Phone with a buyer’s message',
+      kind: 'phone',
+      relevant: true,
+      description: 'A smartphone in a sandy case, its lock screen showing a message preview.',
+      precautions: [
+        'Do not unlock it, switch it off or delete anything: data can be wiped remotely.',
+        'Do not charge or connect it to any device.',
+        'Hand it to the police as it is, and note who found it and when.',
+      ],
+      laws: [TRADE, ELECTRONIC],
+      connection: 'The preview, sent at 2:58 AM, reads “one full clutch, cash at the harbour by noon”. That is half an hour before the nest was dug out.',
+      deskOffset: [0.5, 0.05],
+    },
+    {
+      id: 'padlock',
+      name: 'Cut hatchery padlock',
+      kind: 'padlock',
+      relevant: true,
+      description: 'A brass padlock with a volunteer’s paint mark on it, its shackle sliced clean through.',
+      precautions: [
+        'Do not handle it: the cut surface can be matched to the tool that made it.',
+        'Do not try to fit it back on the gate.',
+        'Leave it where it lies and tell the police or forest officers.',
+      ],
+      laws: [MISCHIEF, TRESPASS],
+      connection: 'The paint mark shows it came from the hatchery gate. A clean cut means someone came prepared, and got in without a key.',
+      deskOffset: [-0.15, 0.24],
+    },
+    {
+      id: 'sunscreen',
+      name: 'Half-used sunscreen',
+      kind: 'sunscreen',
+      relevant: false,
+      description: 'A squeezed tube of sunscreen with a hotel room number written on the cap.',
+      precautions: [
+        'Things left near a scene can still matter, so do not throw them away.',
+        'Do not pick it up, because it can carry prints.',
+        'Tell the investigators, and let them decide whether it matters.',
+      ],
+      laws: [RELEVANCE, SCREEN_EVIDENCE],
+      connection: 'The room number belongs to a family who only checked in on Sunday morning, hours after the nest was raided. It has no link to the crime.',
+      deskOffset: [0.3, 0.24],
+    },
+    {
+      id: 'flipflop',
+      name: 'Child’s lost flip-flop',
+      kind: 'flipflop',
+      relevant: false,
+      description: 'One small pink flip-flop with a broken strap, bleached by a few days of sun.',
+      precautions: [
+        'A lost item can show who was where, so leave it in place at a real scene.',
+        'Do not assume it matters, or that it does not.',
+        'Let the investigators sort clues from noise.',
+      ],
+      laws: [SCREEN_EVIDENCE, RELEVANCE],
+      connection: 'It is far too small for whoever dug a metre into the sand, and sun-bleached, so it lay here long before Saturday night. It is just lost property.',
+      deskOffset: [0.32, -0.2],
+    },
+  ],
+  charges: [HUNTING, PENALTY, GOVERNMENT_PROPERTY, TRADE, COAST, MISCHIEF, TRESPASS, ENDANGERING, RASH_BOATING, SCREEN_EVIDENCE, FORENSIC, ELECTRONIC, RELEVANCE],
+}

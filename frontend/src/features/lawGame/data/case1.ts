@@ -6,7 +6,7 @@ const THEFT: LawRef = {
   title: 'Theft',
   summary: 'Dishonestly taking movable property out of someone’s possession without consent is theft.',
 }
-const TRESPASS: LawRef = {
+export const TRESPASS: LawRef = {
   act: 'Bharatiya Nyaya Sanhita, 2023',
   section: 'Section 329',
   title: 'Criminal trespass',

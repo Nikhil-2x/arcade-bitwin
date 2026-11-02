@@ -1,9 +1,9 @@
 export type PlayerIndex = 0 | 1
 
-export type EvidenceKind = 'envelope' | 'phone' | 'key' | 'printout' | 'bottle' | 'receipt' | 'cable' | 'cutters' | 'pass' | 'tiffin'
+export type EvidenceKind = 'envelope' | 'phone' | 'key' | 'printout' | 'bottle' | 'receipt' | 'cable' | 'cutters' | 'pass' | 'tiffin' | 'sack' | 'trowel' | 'padlock' | 'sunscreen' | 'flipflop'
 
 /** Which 3D world a case plays out in. */
-export type SceneId = 'classroom' | 'railway'
+export type SceneId = 'classroom' | 'railway' | 'beach'
 
 export interface LawRef {
   act: string
@@ -42,7 +42,7 @@ export interface Suspect {
   statement: string
 }
 
-export type Mood = 'day' | 'dusk' | 'night' | 'alarm'
+export type Mood = 'day' | 'dusk' | 'night' | 'alarm' | 'shore'
 
 export interface StoryBeat {
   kicker: string
@@ -69,6 +69,12 @@ export interface CaseCopy {
   sceneTip?: string
   /** World-specific controls for the help line, shown after the shared ones. */
   extraControls?: ReadonlyArray<readonly [key: string, action: string]>
+  /** Heading on the character screen. */
+  chooseTitle?: string
+  /** Heading on the note shown at the boundary that has a legal reason behind it. */
+  edgeLabel?: string
+  /** The place name that comes up as the player arrives. */
+  arrival?: { title: string; subtitle: string }
 }
 
 export interface LawCase {
