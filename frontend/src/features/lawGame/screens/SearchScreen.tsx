@@ -3,6 +3,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { PLAYER_NAMES } from '../config.ts'
 import { useLawGame } from '../store/useLawGame.ts'
 import { RoomScene, type Vec3 } from '../three/RoomScene.tsx'
+import { isEngaged } from '../three/engaged.ts'
+import { LawMobileControls } from '../ui/LawMobileControls.tsx'
+import { useIsMobile } from '../../../components/mobile/index.ts'
 import { ArrivalCard } from '../ui/ArrivalCard.tsx'
 import { HudToast } from '../ui/HudToast.tsx'
 import { LawNote } from '../ui/LawNote.tsx'
@@ -19,6 +22,7 @@ export function SearchScreen() {
   const [collected, setCollected] = useState<string[]>([])
   const [prompt, setPrompt] = useState<string | null>(null)
   const [locked, setLocked] = useState(false)
+  const mobile = useIsMobile()
   const [ready, setReady] = useState(false)
   const [started, setStarted] = useState(false)
   const [showLaw, setShowLaw] = useState(false)
@@ -61,7 +65,7 @@ export function SearchScreen() {
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.code === 'Enter' && document.pointerLockElement) finish()
+      if (e.code === 'Enter' && isEngaged()) finish()
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
@@ -139,9 +143,10 @@ export function SearchScreen() {
         <button className="lg-btn lg-done" onClick={finish} disabled={!ready}>
           {collected.length === total ? 'Sort the evidence' : 'Stop searching'} <span className="lg-dim">(Enter)</span>
         </button>
+        <LawMobileControls engaged={locked} actionLabel="Use" extraControls={theCase.copy.extraControls} />
         {ready && !locked && (
-          <div className="lg-lock" onClick={() => document.querySelector<HTMLCanvasElement>('.lg-canvas canvas')?.requestPointerLock()}>
-            <h2>Click to enter the scene</h2>
+          <div className="lg-lock" onClick={() => document.querySelector<HTMLCanvasElement>('.lg-canvas canvas')?.click()}>
+            <h2>{mobile ? 'Tap' : 'Click'} to enter the scene</h2>
             <p className="lg-dim">
               {total} items were left in the {theCase.copy.sceneNoun}. Some matter, some do not. Find them all, then you will sort them.
             </p>

@@ -4,6 +4,7 @@ import { MotionPathPlugin } from 'gsap/MotionPathPlugin'
 import { useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import type { Speech } from '../../ui/useSpeech.ts'
+import { isEngaged } from '../engaged.ts'
 import type { RoomQueries } from '../RoomQueries.ts'
 import { BeachCrowd } from './BeachCrowd.tsx'
 import type { BeachQueries } from './BeachQueries.ts'
@@ -42,7 +43,7 @@ function DroneShot({ q }: { q: BeachQueries }) {
     }
     let tween: gsap.core.Tween | null = null
     const land = () => {
-      if (tween || !document.pointerLockElement) return
+      if (tween || !isEngaged()) return
       tween = gsap.to(q.drone, { blend: 0, duration: LANDING_S, ease: 'power2.inOut' })
     }
     document.addEventListener('pointerlockchange', land)

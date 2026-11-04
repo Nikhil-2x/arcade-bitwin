@@ -7,6 +7,7 @@ import type { Suspect } from '../../types.ts'
 import type { Speech } from '../../ui/useSpeech.ts'
 import { BEACH_PEOPLE, type Activity, type Carry, type PersonDef } from './beachCrowdData.ts'
 import { COURT, KICK_AREA } from './beachLayout.ts'
+import { isEngaged } from '../engaged.ts'
 import type { BeachQueries } from './BeachQueries.ts'
 import { shadowTexture } from './beachTextures.ts'
 
@@ -726,7 +727,7 @@ export function BeachCrowd({ q, onSpeech }: { q: BeachQueries; onSpeech?: (speec
 
     // Walk into the ball and it goes where you are looking.
     const ball = kickBall.current
-    if (ball && !ballBusy.current && document.pointerLockElement && q.drone.blend <= 0) {
+    if (ball && !ballBusy.current && isEngaged() && q.drone.blend <= 0) {
       const d = Math.hypot(ball.position.x - px, ball.position.z - pz)
       if (d < KICK_REACH) {
         camera.getWorldDirection(view)

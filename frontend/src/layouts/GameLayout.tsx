@@ -1,4 +1,5 @@
 import { Outlet } from 'react-router'
+import CircleMobileControls from '../components/CircleMobileControls.tsx'
 import CrtFeed from '../components/CrtFeed.tsx'
 import FlashlightCursor from '../components/FlashlightCursor.tsx'
 import RotateNotice from '../components/RotateNotice.tsx'
@@ -16,6 +17,7 @@ export default function GameLayout() {
       <GameCanvas />
       <CrtFeed />
       <FlashlightCursor />
+      <CircleMobileControls />
       <RotateNotice />
       <Outlet />
     </div>

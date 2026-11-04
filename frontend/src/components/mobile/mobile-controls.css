@@ -1,0 +1,87 @@
+/* On-screen gamepad. The root lets touches through; only the stick and buttons catch them. */
+.mc-root {
+  position: fixed;
+  inset: 0;
+  z-index: 15;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.mc-left,
+.mc-right {
+  position: absolute;
+  bottom: max(18px, env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+.mc-left { left: max(18px, env(safe-area-inset-left)); }
+.mc-right {
+  right: max(18px, env(safe-area-inset-right));
+  display: flex;
+  flex-wrap: wrap-reverse;
+  flex-direction: row-reverse;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: 10px;
+  max-width: 190px;
+}
+
+.mc-stick {
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, rgba(10, 12, 28, 0.55) 70%);
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.18), inset 0 0 18px rgba(0, 0, 0, 0.45);
+  touch-action: none;
+  pointer-events: auto;
+  opacity: 0.7;
+  transition: opacity 150ms;
+}
+.mc-stick.is-active { opacity: 1; }
+
+.mc-knob {
+  width: 46%;
+  height: 46%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8e6 0%, #ffb547 55%, #c47d1c 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), 0 0 16px rgba(255, 181, 71, 0.35);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.mc-btn {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+  font: 600 11px/1.1 "Varela Round", system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: #eef1ff;
+  background: rgba(10, 12, 28, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  touch-action: none;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 80ms, background-color 80ms;
+}
+.mc-btn.is-primary {
+  width: 76px;
+  height: 76px;
+  font-size: 13px;
+  color: #1b1304;
+  background: rgba(255, 181, 71, 0.85);
+  border-color: rgba(255, 240, 210, 0.7);
+}
+.mc-btn.is-down { transform: scale(0.92); background: rgba(255, 255, 255, 0.28); }
+.mc-btn.is-primary.is-down { background: #ffcf7a; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-stick, .mc-btn { transition: none; }
+}

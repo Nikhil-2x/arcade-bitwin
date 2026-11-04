@@ -8,6 +8,8 @@ import { ENVIRONMENTS, loadEnvironment, type SpawnPoint } from './environments.t
 import { EvidenceProp } from './EvidenceProp.tsx'
 import type { Speech } from '../ui/useSpeech.ts'
 import { RoomQueries } from './RoomQueries.ts'
+import { isEngaged, setTouchEngaged } from './engaged.ts'
+import { isMobileUI, virtualStick } from '../../../components/mobile/index.ts'
 
 export type Vec3 = [number, number, number]
 
@@ -63,37 +65,83 @@ function Rig({ q, spawn, paused, onLockChange }: { q: RoomQueries; spawn: SpawnP
       pitch.current = THREE.MathUtils.clamp(pitch.current - e.movementY * 0.0022, -1.35, 1.35)
     }
     const click = () => {
-      if (document.pointerLockElement !== el) el.requestPointerLock?.()
+      // Phones have no pointer lock: a tap on the scene steps in, and dragging looks around.
+      if (isMobileUI()) setTouchEngaged(true)
+      else if (document.pointerLockElement !== el) el.requestPointerLock?.()
     }
-    const lock = () => lockCb.current(document.pointerLockElement === el)
+    const lock = () => lockCb.current(isEngaged())
+    // Touch look: one finger dragging on the scene (the joystick and buttons sit above the canvas).
+    let lookId: number | null = null
+    let lastX = 0
+    let lastY = 0
+    const touchDown = (e: PointerEvent) => {
+      if (e.pointerType !== 'touch' || lookId !== null || !isEngaged()) return
+      lookId = e.pointerId
+      lastX = e.clientX
+      lastY = e.clientY
+    }
+    const touchMove = (e: PointerEvent) => {
+      if (e.pointerId !== lookId) return
+      yaw.current -= (e.clientX - lastX) * 0.006
+      pitch.current = THREE.MathUtils.clamp(pitch.current - (e.clientY - lastY) * 0.006, -1.35, 1.35)
+      lastX = e.clientX
+      lastY = e.clientY
+    }
+    const touchUp = (e: PointerEvent) => {
+      if (e.pointerId === lookId) lookId = null
+    }
+    // Esc (or the on-screen pause button) steps out of touch play, as it frees the mouse on desktop.
+    const esc = (e: KeyboardEvent) => {
+      if (e.code === 'Escape') setTouchEngaged(false)
+    }
     window.addEventListener('keydown', kd)
+    window.addEventListener('keydown', esc)
     window.addEventListener('keyup', ku)
     document.addEventListener('mousemove', move)
     document.addEventListener('pointerlockchange', lock)
     el.addEventListener('click', click)
+    el.addEventListener('pointerdown', touchDown)
+    window.addEventListener('pointermove', touchMove)
+    window.addEventListener('pointerup', touchUp)
+    window.addEventListener('pointercancel', touchUp)
     return () => {
       window.removeEventListener('keydown', kd)
+      window.removeEventListener('keydown', esc)
       window.removeEventListener('keyup', ku)
       document.removeEventListener('mousemove', move)
       document.removeEventListener('pointerlockchange', lock)
       el.removeEventListener('click', click)
+      el.removeEventListener('pointerdown', touchDown)
+      window.removeEventListener('pointermove', touchMove)
+      window.removeEventListener('pointerup', touchUp)
+      window.removeEventListener('pointercancel', touchUp)
       if (document.pointerLockElement === el) document.exitPointerLock()
+      setTouchEngaged(false)
     }
   }, [gl])
 
   useEffect(() => {
-    if (paused && document.pointerLockElement === gl.domElement) document.exitPointerLock()
+    if (!paused) return
+    if (document.pointerLockElement === gl.domElement) document.exitPointerLock()
+    setTouchEngaged(false)
   }, [paused, gl])
 
   useFrame((_, dt) => {
     const k = keys.current
     let walked = 0
     if (!paused) {
-      const f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
-      const r = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)
+      let f = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0)
+      let r = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0)
+      let run = k.has('ShiftLeft') || k.has('ShiftRight')
+      // The on-screen stick is analog: it overrides the 8-way keys it also holds, and runs when pushed to the rim.
+      if (virtualStick.x || virtualStick.y) {
+        f = -virtualStick.y
+        r = virtualStick.x
+        run = Math.hypot(f, r) > 0.95
+      }
       if (f || r) {
-        const speed = (k.has('ShiftLeft') || k.has('ShiftRight') ? RUN_SPEED : WALK_SPEED) * Math.min(dt, 0.05)
         const len = Math.hypot(f, r)
+        const speed = (run ? RUN_SPEED : WALK_SPEED) * Math.min(dt, 0.05) * Math.min(len, 1)
         const sin = Math.sin(yaw.current)
         const cos = Math.cos(yaw.current)
         // yaw 0 faces -z; forward = (-sin, -cos), right = (cos, -sin)
@@ -153,7 +201,7 @@ function Interaction(props: RoomSceneProps & {
   )
 
   useFrame(() => {
-    if (paused || document.pointerLockElement === null) {
+    if (paused || !isEngaged()) {
       say(null)
       if (ghostRef.current) ghostRef.current.visible = false
       return
@@ -186,7 +234,7 @@ function Interaction(props: RoomSceneProps & {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.code !== 'KeyE' || e.repeat || paused || document.pointerLockElement === null) return
+      if (e.code !== 'KeyE' || e.repeat || paused || !isEngaged()) return
       if (mode === 'hide') {
         if (carried) {
           const a = aimPoint.current
@@ -311,6 +359,7 @@ export function RoomScene(props: RoomSceneProps) {
     <Canvas
       camera={{ fov: 72, near: 0.05, far: meta.far, position: [0, EYE_HEIGHT, 0] }}
       dpr={dpr}
+      style={{ touchAction: 'none' }}
       gl={{ antialias: true }}
       onCreated={({ scene }) => {
         scene.background = new THREE.Color(meta.background)

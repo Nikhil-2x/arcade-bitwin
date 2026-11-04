@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { useLawGame } from '../../store/useLawGame.ts'
 import type { Speech } from '../../ui/useSpeech.ts'
+import { isEngaged } from '../engaged.ts'
 import type { RoomQueries } from '../RoomQueries.ts'
 import { BankCrowd } from './BankCrowd.tsx'
 import { TOKEN_LESSONS } from './bankCrowdData.ts'
@@ -25,7 +26,7 @@ function IntroShot({ q }: { q: BankQueries }) {
     }
     let tween: gsap.core.Tween | null = null
     const land = () => {
-      if (tween || !document.pointerLockElement) return
+      if (tween || !isEngaged()) return
       tween = gsap.to(q.intro, { blend: 0, duration: LANDING_S, ease: 'power2.inOut' })
     }
     document.addEventListener('pointerlockchange', land)

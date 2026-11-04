@@ -4,6 +4,9 @@ import * as THREE from 'three'
 import { PLAYER_NAMES } from '../config.ts'
 import { useLawGame } from '../store/useLawGame.ts'
 import { RoomScene, type Vec3 } from '../three/RoomScene.tsx'
+import { isEngaged } from '../three/engaged.ts'
+import { LawMobileControls } from '../ui/LawMobileControls.tsx'
+import { useIsMobile } from '../../../components/mobile/index.ts'
 import type { RoomQueries } from '../three/RoomQueries.ts'
 import type { Placement } from '../types.ts'
 import { ArrivalCard } from '../ui/ArrivalCard.tsx'
@@ -28,6 +31,7 @@ export function HideScreen() {
   const [moved, setMoved] = useState<string[]>([])
   const [prompt, setPrompt] = useState<string | null>(null)
   const [locked, setLocked] = useState(false)
+  const mobile = useIsMobile()
   const warned = useRef(false)
   const [started, setStarted] = useState(false)
   const [showLaw, setShowLaw] = useState(false)
@@ -82,7 +86,7 @@ export function HideScreen() {
 
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
-      if (e.code === 'Enter' && document.pointerLockElement) finish()
+      if (e.code === 'Enter' && isEngaged()) finish()
     }
     window.addEventListener('keydown', key)
     return () => window.removeEventListener('keydown', key)
@@ -163,9 +167,10 @@ export function HideScreen() {
         <button className="lg-btn lg-done" onClick={finish} disabled={!ready}>
           Done hiding <span className="lg-dim">(Enter)</span>
         </button>
+        <LawMobileControls engaged={locked} actionLabel={carried ? 'Place' : 'Use'} extraControls={theCase.copy.extraControls} />
         {ready && !locked && (
-          <div className="lg-lock" onClick={() => document.querySelector<HTMLCanvasElement>('.lg-canvas canvas')?.requestPointerLock()}>
-            <h2>Click to step in</h2>
+          <div className="lg-lock" onClick={() => document.querySelector<HTMLCanvasElement>('.lg-canvas canvas')?.click()}>
+            <h2>{mobile ? 'Tap' : 'Click'} to step in</h2>
             <p className="lg-dim">
               Hide all {theCase.evidences.length} items before time runs out. Relevant or not, you decide what stays in sight.
             </p>

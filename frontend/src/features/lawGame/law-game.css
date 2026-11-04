@@ -272,3 +272,11 @@ button.lg-card:hover { transform: translateY(-5px); border-color: var(--lg-amber
   .lg-lv-train { animation: none; transform: translateX(-60px); }
   .lg-lv-paper { animation: none; transform: translate(226px, 150px); }
 }
+
+/* Phones: the on-screen gamepad replaces the keyboard help, and owns the bottom corners. Keep in sync with MOBILE_QUERY. */
+@media (hover: none) and (pointer: coarse) and (max-width: 1024px), (hover: none) and (pointer: coarse) and (max-height: 600px) {
+  .lg-help { display: none; }
+  .lg-done { top: 14px; bottom: auto; right: 50%; transform: translateX(50%); }
+  .lg-done .lg-dim { display: none; }
+  .lg-speech { bottom: 170px; }
+}
